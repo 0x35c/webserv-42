@@ -3,29 +3,29 @@
 int	set_up_server(sockaddr_in & socketAddress, socklen_t & socketAddress_len)
 {
 	//create the socket server
-	int socket_server = socket(AF_INET, SOCK_STREAM, 0);
-	if (socket_server < 0)
+	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	if (sockfd < 0)
 	{
 		std::cerr << "socket failed\n";
 		return (-1);
 	}
 
 	int option = 1;
-	if (setsockopt(socket_server, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(int)) < 0)
+	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(int)) < 0)
 	{
 		std::cerr << "setsockopt" << "\n";
 		return (-1);
 	}
 
 	//bind to the PORT with the informations above
-	if (bind(socket_server, (sockaddr*)&socketAddress, socketAddress_len) < 0)
+	if (bind(sockfd, (sockaddr*)&socketAddress, socketAddress_len) < 0)
 	{
 		std::cerr << strerror(errno) << "\n";
 		return (-1);
 	}
 
 	//start to listen to request (= wait)
-	if (listen(socket_server, 1) < 0)
+	if (listen(sockfd, 1) < 0)
 	{
 		std::cerr << "listen failed\n";
 		return (-1);
@@ -36,7 +36,7 @@ int	set_up_server(sockaddr_in & socketAddress, socklen_t & socketAddress_len)
         << " PORT: " << ntohs(socketAddress.sin_port)
         << " ***\n\n";
 	std::cout << ss.str() << std::endl;
-	return (socket_server);
+	return (sockfd);
 }
 
 void respond_to_request(int client_socket, std::string path, std::string type)
@@ -47,18 +47,18 @@ void respond_to_request(int client_socket, std::string path, std::string type)
 	int fileSize = file.tellg();
 	file.seekg(0, std::ios::beg);
 
-	const char* imageData = new char[fileSize];
+	const char* data = new char[fileSize];
 
-	file.read((char *)imageData, fileSize);
+	file.read((char *)data, fileSize);
 	file.close();
 
 	std::ostringstream ss;
 	ss << "HTTP/1.1 200 OK\r\n";
 	ss << "Content-type: " + type + "\r\n";
 	ss << "Content-Length: " << fileSize << "\r\n\r\n";
-	ss.write(imageData, fileSize);
+	ss.write(data, fileSize);
 	write(client_socket, ss.str().c_str(), ss.str().size());
-	delete [] imageData;
+	delete [] data;
 }
 
 void read_request(int client_socket)
@@ -102,7 +102,7 @@ void signal_handler(int signal)
 		exit(0);
 }
 //start program and connect to "localhost:8080"
-int	main()
+int	main(void)
 {
 	signal(SIGINT, signal_handler);
 	sockaddr_in socketAddress;

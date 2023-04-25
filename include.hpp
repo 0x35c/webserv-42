@@ -2,11 +2,13 @@
 #define INCLUDE_HPP
 
 #include <sstream>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <cerrno>
 #include <cstdlib>
 #include <string>
+#include <limits>
 
 #include <signal.h>
 #include <sys/socket.h>
@@ -31,5 +33,7 @@ struct sockaddr_in {
 
 #define PORT 8080
 #define IP "0.0.0.0"
+#define IMG 1
+#define HTML 2
 
 #endif

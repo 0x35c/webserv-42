@@ -39,54 +39,57 @@ int	set_up_server(sockaddr_in & socketAddress, socklen_t & socketAddress_len)
 	return (socket_server);
 }
 
-void read_request(int client_socket)
+void respond_to_request(int client_socket, int flag)
 {
-	const int BUFFER_SIZE = 30720;
-	
-	char buffer[BUFFER_SIZE] = {0};
-	if (read(client_socket, buffer, BUFFER_SIZE) < 0)
-		return ;
-	std::cout << buffer << "\n";
+	std::string _buffer;
+	if (flag == IMG)
+	{
+		std::ifstream imageFile("ulayus.jpg", std::ios::in | std::ios::binary);
+
+		imageFile.seekg(0, std::ios::end);
+		int fileSize = imageFile.tellg();
+		imageFile.seekg(0, std::ios::beg);
+
+		const char* imageData = new char[fileSize];
+
+		imageFile.read((char *)imageData, fileSize);
+		imageFile.close();
+
+		std::ostringstream ss_img;
+		ss_img << "HTTP/1.1 200 OK\r\n";
+		ss_img << "Content-type: image/jpg\r\n";
+		ss_img << "Content-Length: " << fileSize << "\r\n\r\n";
+		ss_img.write(imageData, fileSize);
+		write(client_socket, ss_img.str().c_str(), ss_img.str().size());
+		delete [] imageData;
+	}
+	else if (flag == HTML)
+	{
+		std::string htmlFile = "<!DOCTYPE html>\
+							<html lang=\"en\">\
+							<body>\
+							<h1>HOME</h1>\
+							<p>Hello from your Server :)</p>\
+							<img src=\"ulayus.jpg\" alt=\"Waow\">\
+							</body>\
+							</html>";
+		std::ostringstream ss_html;
+		ss_html << "HTTP/1.1 200 OK\r\nContent-type: text/html\r\nContent-Length: " << htmlFile.size() << "\r\n\r\n"
+			<< htmlFile;
+		write(client_socket, ss_html.str().c_str(), ss_html.str().size());
+	}
 }
 
-void respond_to_request(int client_socket)
+void read_request(int client_socket)
 {
-	/*
-	std::string htmlFile = "<!DOCTYPE html><html lang=\"en\"> \
-							<body> \
-							<h1> \
-							HOME \
-							</h1> \
-							<p> \
-							Hello from your Server :) \
-							</p> \
-							<img src=\"ulayus.jpg\" alt=\"squat-man\"> \
-							</body> \
-							</html>";
-	*/
-	std::ifstream image("ulayus.jpg", std::ios::in | std::ios::binary);
-	std::ofstream binary("ulayus.txt", std::ios::out | std::ios::app);
-	while (!image.eof())
-		binary.put(image.get());
-	/*
-	 std::string htmlFile = "<!DOCTYPE html><html lang=\"en\"> \
-							<body> \
-							<h1> \
-							HOME \
-							</h1> \
-							<p> \
-							Hello from your Server :) \
-							</p> \
-							</body> \
-							</html>";
-							*/
-	binary.seekp(0, std::ios::end);
-	int file_size = binary.tellp();
-	std::ostringstream ss;
-	ss << "HTTP/1.1 200 OK\nContent-Type: image/*\nContent-Length: " << file_size << "\n\n"
-		<< binary.rdbuf();
-	
-	write(client_socket, ss.str().c_str(), ss.str().size());
+	char buffer[30720] = {0};
+	if (read(client_socket, buffer, 30720 - 1) < 0)
+		return ;
+	std::cout << buffer << "\n";
+	if (strncmp(buffer, "GET /ulayus.jpg HTTP/1.1", 24) == 0)
+		respond_to_request(client_socket, IMG);
+	else
+		respond_to_request(client_socket, HTML);
 }
 
 void accept_request(int socket_server, sockaddr_in & socketAddress, socklen_t & socketAddress_len)
@@ -106,7 +109,6 @@ void accept_request(int socket_server, sockaddr_in & socketAddress, socklen_t & 
 		}
 		std::cout << "someone connected.\n";
 		read_request(client_socket);
-		respond_to_request(client_socket);
 		close(client_socket);
 	}
 }

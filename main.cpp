@@ -39,45 +39,26 @@ int	set_up_server(sockaddr_in & socketAddress, socklen_t & socketAddress_len)
 	return (socket_server);
 }
 
-void respond_to_request(int client_socket, int flag)
+void respond_to_request(int client_socket, std::string path, std::string type)
 {
-	std::string _buffer;
-	if (flag == IMG)
-	{
-		std::ifstream imageFile("ulayus.jpg", std::ios::in | std::ios::binary);
+	std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
 
-		imageFile.seekg(0, std::ios::end);
-		int fileSize = imageFile.tellg();
-		imageFile.seekg(0, std::ios::beg);
+	file.seekg(0, std::ios::end);
+	int fileSize = file.tellg();
+	file.seekg(0, std::ios::beg);
 
-		const char* imageData = new char[fileSize];
+	const char* imageData = new char[fileSize];
 
-		imageFile.read((char *)imageData, fileSize);
-		imageFile.close();
+	file.read((char *)imageData, fileSize);
+	file.close();
 
-		std::ostringstream ss_img;
-		ss_img << "HTTP/1.1 200 OK\r\n";
-		ss_img << "Content-type: image/jpg\r\n";
-		ss_img << "Content-Length: " << fileSize << "\r\n\r\n";
-		ss_img.write(imageData, fileSize);
-		write(client_socket, ss_img.str().c_str(), ss_img.str().size());
-		delete [] imageData;
-	}
-	else if (flag == HTML)
-	{
-		std::string htmlFile = "<!DOCTYPE html>\
-							<html lang=\"en\">\
-							<body>\
-							<h1>HOME</h1>\
-							<p>Hello from your Server :)</p>\
-							<img src=\"ulayus.jpg\" alt=\"Waow\">\
-							</body>\
-							</html>";
-		std::ostringstream ss_html;
-		ss_html << "HTTP/1.1 200 OK\r\nContent-type: text/html\r\nContent-Length: " << htmlFile.size() << "\r\n\r\n"
-			<< htmlFile;
-		write(client_socket, ss_html.str().c_str(), ss_html.str().size());
-	}
+	std::ostringstream ss;
+	ss << "HTTP/1.1 200 OK\r\n";
+	ss << "Content-type: " + type + "\r\n";
+	ss << "Content-Length: " << fileSize << "\r\n\r\n";
+	ss.write(imageData, fileSize);
+	write(client_socket, ss.str().c_str(), ss.str().size());
+	delete [] imageData;
 }
 
 void read_request(int client_socket)
@@ -87,9 +68,11 @@ void read_request(int client_socket)
 		return ;
 	std::cout << buffer << "\n";
 	if (strncmp(buffer, "GET /ulayus.jpg HTTP/1.1", 24) == 0)
-		respond_to_request(client_socket, IMG);
+		respond_to_request(client_socket, "ulayus.jpg", "image/jpg");
+	else if (strncmp(buffer, "GET /images.png HTTP/1.1", 24) == 0)
+		respond_to_request(client_socket, "images.png", "image/png");
 	else
-		respond_to_request(client_socket, HTML);
+		respond_to_request(client_socket, "index.html", "text/html");
 }
 
 void accept_request(int socket_server, sockaddr_in & socketAddress, socklen_t & socketAddress_len)

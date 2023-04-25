@@ -1,30 +1,4 @@
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <sstream>
-#include <iostream>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <string.h>
-#include <cerrno>
-/*
-struct in_addr{
-	unsigned long s_addr;
-};
-
-struct sockaddr_in {
-	short sin_family;
-	unsigned short sin_port;
-	struct in_addr sin_addr;
-	char sin_zero[8];
-};
-*/
-
-#define PORT 8080
-
-//IP 0.0.0.0 is localhost
-#define IP "0.0.0.0"
+#include "include.hpp"
 
 int	set_up_server(sockaddr_in & socketAddress, socklen_t & socketAddress_len)
 {
@@ -33,6 +7,13 @@ int	set_up_server(sockaddr_in & socketAddress, socklen_t & socketAddress_len)
 	if (socket_server < 0)
 	{
 		std::cerr << "socket failed\n";
+		return (-1);
+	}
+
+	int option = 1;
+	if (setsockopt(socket_server, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(int)) < 0)
+	{
+		std::cerr << "setsockopt" << "\n";
 		return (-1);
 	}
 
@@ -70,10 +51,41 @@ void read_request(int client_socket)
 
 void respond_to_request(int client_socket)
 {
-	std::string htmlFile = "<!DOCTYPE html><html lang=\"en\"><body><h1> HOME </h1><p> Hello from your Server :) </p></body></html>";
+	/*
+	std::string htmlFile = "<!DOCTYPE html><html lang=\"en\"> \
+							<body> \
+							<h1> \
+							HOME \
+							</h1> \
+							<p> \
+							Hello from your Server :) \
+							</p> \
+							<img src=\"ulayus.jpg\" alt=\"squat-man\"> \
+							</body> \
+							</html>";
+	*/
+	std::ifstream image("ulayus.jpg", std::ios::in | std::ios::binary);
+	std::ofstream binary("ulayus.txt", std::ios::out | std::ios::app);
+	while (!image.eof())
+		binary.put(image.get());
+	/*
+	 std::string htmlFile = "<!DOCTYPE html><html lang=\"en\"> \
+							<body> \
+							<h1> \
+							HOME \
+							</h1> \
+							<p> \
+							Hello from your Server :) \
+							</p> \
+							</body> \
+							</html>";
+							*/
+	binary.seekp(0, std::ios::end);
+	int file_size = binary.tellp();
 	std::ostringstream ss;
-	ss << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " << htmlFile.size() << "\n\n"
-		<< htmlFile;
+	ss << "HTTP/1.1 200 OK\nContent-Type: image/*\nContent-Length: " << file_size << "\n\n"
+		<< binary.rdbuf();
+	
 	write(client_socket, ss.str().c_str(), ss.str().size());
 }
 
@@ -99,9 +111,15 @@ void accept_request(int socket_server, sockaddr_in & socketAddress, socklen_t & 
 	}
 }
 
+void signal_handler(int signal)
+{
+	if (signal == SIGINT)
+		exit(0);
+}
 //start program and connect to "localhost:8080"
 int	main()
 {
+	signal(SIGINT, signal_handler);
 	sockaddr_in socketAddress;
 	socklen_t	socketAddress_len = sizeof(socketAddress);
 	socketAddress.sin_family = AF_INET;

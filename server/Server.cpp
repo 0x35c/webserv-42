@@ -64,9 +64,9 @@ void Server::readRequest(void) {
 	if (read(_clientfd, buffer, 30720 - 1) < 0)
 		exitWithError("error: failed to read client socket\n");
 	std::cout << buffer << "\n";
-	if (strncmp(buffer, "GET /ulayus.jpg HTTP/1.1", 24) == 0) {
+	if (strncmp(buffer, "GET /averdon.jpg HTTP/1.1", 24) == 0) {
 		_type = "image/avif";
-		_path = "server/ulayus.jpg";
+		_path = "server/averdon.jpg";
 	}
 	else if (strncmp(buffer, "GET /images.png HTTP/1.1", 24) == 0) {
 		_type = "image/avif";

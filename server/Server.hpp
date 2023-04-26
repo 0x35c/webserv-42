@@ -4,7 +4,6 @@
 #include <string>
 #include "include.hpp"
 
-
 class Server {
 	public:
 		Server(std::string ipAddr, int port);
@@ -31,6 +30,7 @@ class Server {
 		std::string _type;
 		std::string _path;
 		std::string _ipAddr;
+		const char* _buffer;
 		sockaddr_in _sockAddr;
 		socklen_t _sockAddr_len;
 		

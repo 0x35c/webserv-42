@@ -40,23 +40,34 @@ void Server::respondToRequest(void) {
 	std::ifstream file(_path.c_str(), std::ios::in | std::ios::binary);
 
 	file.seekg(0, std::ios::end);
-	int fileSize = file.tellg();
+	long fileSize = file.tellg();
 	file.seekg(0, std::ios::beg);
 
 	if (fileSize <= 0)
-		exitWithError("error: empty file\n");
-	const char* data = new char[fileSize];
-
-	file.read((char *)data, fileSize);
-	file.close();
-
+		exitWithError("error: empty or missing file\n");
 	std::ostringstream ss;
 	ss << "HTTP/1.1 200 OK\r\n";
 	ss << "Content-type: " + _type + "\r\n";
 	ss << "Content-Length: " << fileSize << "\r\n\r\n";
-	ss.write(data, fileSize);
 	write(_clientfd, ss.str().c_str(), ss.str().size());
-	delete [] data;
+	ss.str("");
+	ss.clear();
+
+	while (!file.eof()) {
+		if (fileSize > BUFFER_SIZE) {
+			file.read((char *)_buffer, BUFFER_SIZE);
+			ss.write(_buffer, BUFFER_SIZE);
+			fileSize -= BUFFER_SIZE;
+		}
+		else {
+			file.read((char *)_buffer, fileSize);
+			ss.write(_buffer, fileSize);
+		}
+		write(_clientfd, ss.str().c_str(), ss.str().size());
+		ss.str("");
+		ss.clear();
+	}
+	file.close();
 }
 
 void Server::readRequest(void) {
@@ -75,6 +86,10 @@ void Server::readRequest(void) {
 	else if (strncmp(buffer, "GET /style.css HTTP/1.1", 23) == 0) {
 		_type = "text/css";
 		_path = "server/style.css";
+	}
+	else if (strncmp(buffer, "GET /video.mp4 HTTP/1.1", 23) == 0) {
+		_type = "video/webm";
+		_path = "server/video.mp4";
 	}
 	else {
 		_type = "text/html";
@@ -102,7 +117,7 @@ void Server::acceptRequest(void) {
 	}
 }
 
-Server::Server(std::string ipAddr, int port){
+Server::Server(std::string ipAddr, int port): _buffer(new char[BUFFER_SIZE]) {
 	_ipAddr = ipAddr;
 	_port = port;
 	_sockAddr_len = sizeof(_sockAddr);
@@ -127,4 +142,7 @@ Server&	Server::operator=(const Server &other){
 }
 
 Server::~Server(void){
+	delete [] _buffer;
+	close(_clientfd);
+	close(_sockfd);
 }

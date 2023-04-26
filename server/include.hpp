@@ -35,5 +35,6 @@ struct sockaddr_in {
 #define IP "0.0.0.0"
 #define IMG 1
 #define HTML 2
+#define BUFFER_SIZE 2 << 18
 
 #endif

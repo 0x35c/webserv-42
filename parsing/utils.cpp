@@ -1,6 +1,7 @@
 #include <sstream>
 #include <vector>
 #include <dirent.h>
+#include <unistd.h>
 
 #define WHITESPACE " \n\r\t\f\v"
 
@@ -49,11 +50,15 @@ bool isDigit(const std::string string)
 
 bool isValidPath(const std::string string)
 {
+	/*
 	DIR *directory = opendir(string.c_str());
 	if (directory != NULL)
 	{
 		closedir(directory);
 		return (true);
 	}
+	*/
+	if (access(string.c_str(), 0) == 0)
+		return (true);
 	return (false);
 }

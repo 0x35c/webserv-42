@@ -4,9 +4,6 @@
 #include <string>
 #include <vector>
 
-//DEBUG
-#include <iostream>
-
 typedef struct location {
 	std::string	locationPath;
 	bool 		methodsAllowed[3];

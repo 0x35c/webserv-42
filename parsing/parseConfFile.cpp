@@ -1,13 +1,10 @@
 #include "parsing.hpp"
 #include <fstream>
+#include <cstring>
 
 const std::vector<t_server> readConfFile(std::ifstream & conf_file)
 {
 	std::vector<t_server> servers;
-	//find instantiation of a server
-	//push back one in the vector and initialize it
-	//search for parameter in the server {}
-	//if a line isn't conform, stop
 
 	int 						nbLine = 0;
 	bool 						inServerBlock = false;
@@ -34,22 +31,30 @@ const std::vector<t_server> readConfFile(std::ifstream & conf_file)
 		{
 			if (line.length() == 0)
 				continue;
-			else if (line.find("location") != std::string::npos) //problem if a value contain "location"
+			else if (strncmp(line.c_str(), "location", 8) == 0)
 				inLocationBlock = true;
 			else if (line == "}")
+			{
+				servers.push_back(server);
 				inServerBlock = false;
-			parseLineServerBlock(line, nbLine, server);
+			}
+			if (line != "}")
+				parseLineServerBlock(line, nbLine, server);
 			continue ;
 		}
 		if (inServerBlock && inLocationBlock && !inMethodBlock)
 		{
 			if (line.length() == 0)
 				continue;
-			else if (line.find("methods") != std::string::npos) //problem if a value contain "methods"
+			else if (strncmp(line.c_str(), "methods", 7) == 0)
 				inMethodBlock = true;
 			else if (line == "}")
+			{
+				server.locations.push_back(location);
 				inLocationBlock = false;
-			parseLineLocationBlock(line, nbLine, location);
+			}
+			if (line != "}")
+				parseLineLocationBlock(line, nbLine, location);
 			continue ;
 		}
 		if (inServerBlock && inLocationBlock && inMethodBlock)
@@ -58,7 +63,8 @@ const std::vector<t_server> readConfFile(std::ifstream & conf_file)
 				continue;
 			else if (line == "}")
 				inMethodBlock = false;
-			parseLineMethodBlock(line, nbLine, location);
+			if (line != "}")
+				parseLineMethodBlock(line, nbLine, location);
 			continue ;
 		}
 	}

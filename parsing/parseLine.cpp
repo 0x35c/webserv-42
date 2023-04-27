@@ -107,7 +107,7 @@ void	parseLineServerBlock(std::string & line, int nbLine, t_server & server)
 				case 0:
 					if (lineSplitted.size() < 3)
 						throw(ParsingError("line " + intToString(nbLine) + " has only one value and takes two."));
-					server.address = lineSplitted[1] + lineSplitted[2];
+					server.address = lineSplitted[1] + ":" + lineSplitted[2];
 					return;
 				case 1:
 					server.server_name = lineSplitted[1];

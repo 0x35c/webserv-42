@@ -2,6 +2,7 @@
 #define SERVER_HPP_
 
 #include <string>
+#include <map>
 #include "include.hpp"
 
 class Server {
@@ -27,8 +28,7 @@ class Server {
 		int _sockfd;
 		int	_clientfd;
 		int _port;
-		std::string _type;
-		std::string _path;
+		std::map<std::string, std::string> _requestHeader;
 		std::string _ipAddr;
 		const char* _buffer;
 		sockaddr_in _sockAddr;

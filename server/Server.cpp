@@ -37,7 +37,7 @@ void Server::listenForRequest(void) {
 }
 
 void Server::respondToRequest(void) {
-	std::ifstream file(_path.c_str(), std::ios::in | std::ios::binary);
+	std::ifstream file(_requestHeader["PATH"].c_str(), std::ios::in | std::ios::binary);
 
 	file.seekg(0, std::ios::end);
 	long fileSize = file.tellg();
@@ -47,7 +47,7 @@ void Server::respondToRequest(void) {
 		exitWithError("error: empty or missing file\n");
 	std::ostringstream ss;
 	ss << "HTTP/1.1 200 OK\r\n";
-	ss << "Content-type: " + _type + "\r\n";
+	ss << "Content-type: " + _requestHeader["TYPE"] + "\r\n";
 	ss << "Content-Length: " << fileSize << "\r\n\r\n";
 	write(_clientfd, ss.str().c_str(), ss.str().size());
 	ss.str("");
@@ -68,34 +68,6 @@ void Server::respondToRequest(void) {
 		ss.clear();
 	}
 	file.close();
-}
-
-void Server::readRequest(void) {
-	char buffer[30720] = {0};
-	if (read(_clientfd, buffer, 30720 - 1) < 0)
-		exitWithError("error: failed to read client socket\n");
-	std::cout << buffer << "\n";
-	if (strncmp(buffer, "GET /averdon.jpg HTTP/1.1", 24) == 0) {
-		_type = "image/avif";
-		_path = "server/averdon.jpg";
-	}
-	else if (strncmp(buffer, "GET /images.png HTTP/1.1", 24) == 0) {
-		_type = "image/avif";
-		_path = "server/images.png";
-	}
-	else if (strncmp(buffer, "GET /style.css HTTP/1.1", 23) == 0) {
-		_type = "text/css";
-		_path = "server/style.css";
-	}
-	else if (strncmp(buffer, "GET /video.mp4 HTTP/1.1", 23) == 0) {
-		_type = "video/webm";
-		_path = "server/video.mp4";
-	}
-	else {
-		_type = "text/html";
-		_path = "server/index.html";
-	}
-	respondToRequest();
 }
 
 void Server::acceptRequest(void) {

@@ -4,11 +4,11 @@
 #include <string>
 #include <vector>
 
-#define GET 1
-#define POST 2
-#define DELETE 3
+//DEBUG
+#include <iostream>
 
 typedef struct location {
+	std::string	locationPath;
 	bool 		methodsAllowed[3];
 	int			redirectionCode;
 	std::string	redirectionPath;
@@ -19,7 +19,7 @@ typedef struct location {
 	std::string	uploadedFilePath;
 	//add CGI content
 
-} location;
+} t_location;
 
 typedef struct server {
 	std::string 			address; //address = host:port
@@ -27,10 +27,30 @@ typedef struct server {
 	bool					isDefaultServer;
 	std::string 			errpage;
 	int						maxFileSizeUpload;
-	std::vector<location>	locations;
-} server;
+	std::vector<t_location>	locations;
+} t_server;
 
-const std::vector<server> parse_conf_file(const std::string path);
-const std::string ParsingError(std::string error) throw();
+//parsing.cpp
+const std::vector<server> parseConfFile(const std::string path);
+
+//parseLine.hpp
+
+void	parseLineServerBlock(std::string & line, int nbLine, t_server & server);
+void	parseLineLocationBlock(std::string & line, int nbLine, t_location & location);
+void	parseLineMethodBlock(std::string & line, int nbLine, t_location & location);
+
+//initializeStruct.cpp
+
+void	initializeServer(t_server & server);
+void	initializeLocation(t_location & location);
+
+//utils.cpp
+
+bool 							isDigit(const std::string string);
+bool 							isValidPath(const std::string string);
+void							trimString(std::string & string);
+const std::string 				ParsingError(std::string error) throw();
+const std::string				intToString(const int number);
+const std::vector<std::string>	splitString(const std::string string, const char delimiter);
 
 #endif

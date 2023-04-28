@@ -36,7 +36,7 @@ int	main(int ac, char **av)
 		if (ac != 2)
 			throw (ParsingError("only one parameter accepted."));
 		(void)av;
-		/* std::vector<t_server> servers = parseConfFile(av[1]); */
+		/* std::vector<t_server> servers = Parsing::parseConfFile(av[1]); */
 		Server server("0.0.0.0", 8080);
 	}
 	catch (std::string & exception)

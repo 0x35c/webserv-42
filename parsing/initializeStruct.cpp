@@ -1,6 +1,6 @@
 #include "parsing.hpp"
 
-void	initializeLocation(t_location & location)
+void	Parsing::initializeLocation(t_location & location)
 {
 	location.locationPath = "";
 	for (int i = 0; i < 3; i++)
@@ -14,7 +14,7 @@ void	initializeLocation(t_location & location)
 	location.uploadedFilePath = "";
 }
 
-void	initializeServer(t_server & server)
+void	Parsing::initializeServer(t_server & server)
 {
 	server.host = "";
 	server.port = 0;

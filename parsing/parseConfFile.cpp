@@ -2,7 +2,7 @@
 #include <fstream>
 #include <cstring>
 
-void	checkDifferentServer(std::vector<t_server> servers)
+void	Parsing::checkDifferentServer(std::vector<t_server> servers)
 {
 	for (size_t i = 0; i < servers.size(); i++)
 	{
@@ -13,7 +13,7 @@ void	checkDifferentServer(std::vector<t_server> servers)
 		}
 	}
 }
-const std::vector<t_server> readConfFile(std::ifstream & confFile)
+const std::vector<t_server> Parsing::readConfFile(std::ifstream & confFile)
 {
 	std::vector<t_server> servers;
 
@@ -80,7 +80,7 @@ const std::vector<t_server> readConfFile(std::ifstream & confFile)
 	return (servers);
 }
 
-const std::vector<t_server> parseConfFile(const std::string path)
+const std::vector<t_server> Parsing::parseConfFile(const std::string path)
 {
 	if (path.find(".conf") + 5 != path.length())
 		throw (ParsingError("configuration file must have \".conf\" extension."));

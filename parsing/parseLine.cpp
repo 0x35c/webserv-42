@@ -1,6 +1,6 @@
 #include "parsing.hpp"
 
-void	parseLineMethodBlock(const std::string & line, const int & nbLine, t_location & location)
+void	Parsing::parseLineMethodBlock(const std::string & line, const int & nbLine, t_location & location)
 {
 	std::string arguments[3] = {"GET", "POST", "DELETE"};
 	std::vector<std::string> lineSplitted = splitString(line, ' ');
@@ -22,7 +22,7 @@ void	parseLineMethodBlock(const std::string & line, const int & nbLine, t_locati
 	throw(ParsingError("line " + intToString(nbLine) + " has an incorrect variable declaration."));
 }
 
-void	parseLineLocationBlock(const std::string & line, const int & nbLine, t_location & location)
+void	Parsing::parseLineLocationBlock(const std::string & line, const int & nbLine, t_location & location)
 {
 	std::string arguments[8] = { "methods", "return", "root", "directory_listing", "index", "", "accept_uploaded_file", "save_uploaded_file" };
 	bool argumentsUsed[8] = {false};
@@ -45,7 +45,7 @@ void	parseLineLocationBlock(const std::string & line, const int & nbLine, t_loca
 	throw(ParsingError("line " + intToString(nbLine) + " has an incorrect variable declaration."));
 }
 
-void	parseLineServerBlock(const std::string & line, const int & nbLine, t_server & server)
+void	Parsing::parseLineServerBlock(const std::string & line, const int & nbLine, t_server & server)
 {
 	std::string arguments[5] = { "listen", "server_name", "errpage", "max_filesize_upload", "location" };
 	bool argumentsUsed[5] = {false};

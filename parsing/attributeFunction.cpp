@@ -4,12 +4,12 @@
 #include <cstdlib>
 
 //LOCATION BLOCK ATTRIBUTE
-void methodAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted)
+void Parsing::methodAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted)
 {
 	(void)location, (void)nbLine, (void)lineSplitted;
 }
 
-void returnAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted)
+void Parsing::returnAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted)
 {
 	location.redirectionCode = strtol(lineSplitted[1].c_str(), NULL, 10);
 	if (errno != 0)
@@ -23,14 +23,14 @@ void returnAttribute(t_location & location, const int & nbLine, const std::vecto
 	location.redirectionPath = lineSplitted[2];
 }
 
-void rootAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted)
+void Parsing::rootAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted)
 {
 	if (!isValidPath(lineSplitted[1]))
 		throw(ParsingError("line " + intToString(nbLine) + " has an incorrect value."));
 	location.root = lineSplitted[1];
 }
 
-void directoryListingAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted)
+void Parsing::directoryListingAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted)
 {
 	if (lineSplitted[1] == "ON")
 		location.directoryListing = true;
@@ -40,14 +40,14 @@ void directoryListingAttribute(t_location & location, const int & nbLine, const 
 		throw(ParsingError("line " + intToString(nbLine) + " has an incorrect value."));
 }
 
-void indexAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted)
+void Parsing::indexAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted)
 {
 	if (!isValidPath(lineSplitted[1]))
 		throw(ParsingError("line " + intToString(nbLine) + " has an incorrect value."));
 	location.index = lineSplitted[1];
 }
 
-void acceptUploadedFileAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted)
+void Parsing::acceptUploadedFileAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted)
 {
 	if (lineSplitted[1] == "ON")
 		location.acceptUploadedFile = true;
@@ -57,7 +57,7 @@ void acceptUploadedFileAttribute(t_location & location, const int & nbLine, cons
 		throw(ParsingError("line " + intToString(nbLine) + " has an incorrect value."));
 }
 
-void saveUploadedFileAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted)
+void Parsing::saveUploadedFileAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted)
 {
 	if (!isValidPath(lineSplitted[1]))
 		throw(ParsingError("line " + intToString(nbLine) + " has an incorrect value."));
@@ -66,7 +66,7 @@ void saveUploadedFileAttribute(t_location & location, const int & nbLine, const 
 
 //SERVER BLOCK ATTRIBUTE
 
-void listenAttribute(t_server & server, const int & nbLine, const std::vector<std::string> & lineSplitted)
+void Parsing::listenAttribute(t_server & server, const int & nbLine, const std::vector<std::string> & lineSplitted)
 {
 	if (lineSplitted.size() < 3)
 		throw(ParsingError("line " + intToString(nbLine) + " has only one value and takes two."));
@@ -86,20 +86,20 @@ void listenAttribute(t_server & server, const int & nbLine, const std::vector<st
 		throw(ParsingError("line " + intToString(nbLine) + " has an incorrect value."));
 }
 
-void serverNameAttribute(t_server & server, const int & nbLine, const std::vector<std::string> & lineSplitted)
+void Parsing::serverNameAttribute(t_server & server, const int & nbLine, const std::vector<std::string> & lineSplitted)
 {
 	(void)nbLine;
 	server.server_name = lineSplitted[1];
 }
 
-void errpageAttribute(t_server & server, const int & nbLine, const std::vector<std::string> & lineSplitted)
+void Parsing::errpageAttribute(t_server & server, const int & nbLine, const std::vector<std::string> & lineSplitted)
 {
 	if (!isValidPath(lineSplitted[1]))
 		throw(ParsingError("line " + intToString(nbLine) + " has an incorrect value."));
 	server.errpage = lineSplitted[1];
 }
 
-void maxFilesizeUploadAttribute(t_server & server, const int & nbLine, const std::vector<std::string> & lineSplitted)
+void Parsing::maxFilesizeUploadAttribute(t_server & server, const int & nbLine, const std::vector<std::string> & lineSplitted)
 {
 	server.maxFileSizeUpload = strtol(lineSplitted[1].c_str(), NULL, 10);
 	if (errno != 0)
@@ -108,7 +108,7 @@ void maxFilesizeUploadAttribute(t_server & server, const int & nbLine, const std
 		throw(ParsingError("line " + intToString(nbLine) + " has an incorrect value."));
 }
 
-void locationAttribute(t_server & server, const int & nbLine, const std::vector<std::string> & lineSplitted)
+void Parsing::locationAttribute(t_server & server, const int & nbLine, const std::vector<std::string> & lineSplitted)
 {
 	t_location location;
 	initializeLocation(location);

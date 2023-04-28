@@ -29,13 +29,14 @@ void checkValueParsing(std::vector<t_server> servers)
 	}
 }
 
-int	main(int argc, char **argv)
+int	main(int ac, char **av)
 {
 	try
 	{
-		if (argc != 2)
+		if (ac != 2)
 			throw (ParsingError("only one parameter accepted."));
-		std::vector<t_server> servers = parseConfFile(argv[1]);
+		(void)av;
+		/* std::vector<t_server> servers = parseConfFile(av[1]); */
 		Server server("0.0.0.0", 8080);
 	}
 	catch (std::string & exception)

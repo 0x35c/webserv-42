@@ -4,7 +4,8 @@ SRCS	= parsing/parseConfFile.cpp \
 		  parsing/initializeStruct.cpp \
 		  parsing/utils.cpp \
 		  server/main.cpp \
-		  server/Server.cpp
+		  server/Server.cpp\
+		  server/request.cpp
 CC 		= c++
 CFLAGS  = -Wall -Wextra -Werror -std=c++98 -g
 OBJS    = $(SRCS:.cpp=.o)

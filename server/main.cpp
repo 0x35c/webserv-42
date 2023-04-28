@@ -8,7 +8,7 @@ void checkValueParsing(std::vector<t_server> servers)
 	for (size_t i = 0; i < servers.size(); i++)
 	{
 		std::cout << "server : " << i << "\n";
-		std::cout << "listen : " << servers[i].address << "\n";
+		std::cout << "listen : " << servers[i].host << " " << servers[i].port << "\n";
 		std::cout << "server_name : " << servers[i].server_name << "\n";
 		std::cout << "isDefaultServer : " << servers[i].isDefaultServer << "\n";
 		std::cout << "errpage : " << servers[i].errpage << "\n";

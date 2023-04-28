@@ -2,7 +2,18 @@
 #include <fstream>
 #include <cstring>
 
-const std::vector<t_server> readConfFile(std::ifstream & conf_file)
+void	checkDifferentServer(std::vector<t_server> servers)
+{
+	for (size_t i = 0; i < servers.size(); i++)
+	{
+		for (size_t j = i + 1; j < servers.size(); j++)
+		{
+			if (servers[i].port == servers[j].port && servers[i].host == servers[j].host)
+				throw (ParsingError("multiple server with same address."));
+		}
+	}
+}
+const std::vector<t_server> readConfFile(std::ifstream & confFile)
 {
 	std::vector<t_server> servers;
 
@@ -13,21 +24,20 @@ const std::vector<t_server> readConfFile(std::ifstream & conf_file)
 	std::string 				line;
 	t_server					server;
 	t_location					location;
-	while (std::getline(conf_file, line))
+	while (std::getline(confFile, line))
 	{
 		nbLine++;
 		trimString(line);
 		if (line[0] == '#' && line[1] == '#')
 			continue ;
-		if (!inServerBlock && !inLocationBlock && !inMethodBlock)
+		else if (!inServerBlock && !inLocationBlock && !inMethodBlock)
 		{
 			if (line.length() > 0 && line != "server {")
 				throw(ParsingError("line " + intToString(nbLine) + " is invalid."));
 			inServerBlock = true;
 			initializeServer(server);
-			continue;
 		}
-		if (inServerBlock && !inLocationBlock && !inMethodBlock)
+		else if (inServerBlock && !inLocationBlock && !inMethodBlock)
 		{
 			if (line.length() == 0)
 				continue;
@@ -40,9 +50,8 @@ const std::vector<t_server> readConfFile(std::ifstream & conf_file)
 			}
 			if (line != "}")
 				parseLineServerBlock(line, nbLine, server);
-			continue ;
 		}
-		if (inServerBlock && inLocationBlock && !inMethodBlock)
+		else if (inServerBlock && inLocationBlock && !inMethodBlock)
 		{
 			if (line.length() == 0)
 				continue;
@@ -55,9 +64,8 @@ const std::vector<t_server> readConfFile(std::ifstream & conf_file)
 			}
 			if (line != "}")
 				parseLineLocationBlock(line, nbLine, location);
-			continue ;
 		}
-		if (inServerBlock && inLocationBlock && inMethodBlock)
+		else if (inServerBlock && inLocationBlock && inMethodBlock)
 		{
 			if (line.length() == 0)
 				continue;
@@ -65,10 +73,10 @@ const std::vector<t_server> readConfFile(std::ifstream & conf_file)
 				inMethodBlock = false;
 			if (line != "}")
 				parseLineMethodBlock(line, nbLine, location);
-			continue ;
 		}
 	}
-	conf_file.close();
+	confFile.close();
+	checkDifferentServer(servers);
 	return (servers);
 }
 

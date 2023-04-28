@@ -50,15 +50,18 @@ bool isDigit(const std::string string)
 
 bool isValidPath(const std::string string)
 {
-	/*
-	DIR *directory = opendir(string.c_str());
-	if (directory != NULL)
-	{
-		closedir(directory);
-		return (true);
-	}
-	*/
 	if (access(string.c_str(), 0) == 0)
 		return (true);
 	return (false);
+}
+
+size_t countChar(const std::string string, const char delimiter)
+{
+	size_t nbChar = 0;
+	for (size_t i = 0; string[i]; i++)
+	{
+		if (string[i] == delimiter)
+			nbChar++;
+	}
+	return (nbChar);
 }

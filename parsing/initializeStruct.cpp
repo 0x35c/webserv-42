@@ -16,7 +16,8 @@ void	initializeLocation(t_location & location)
 
 void	initializeServer(t_server & server)
 {
-	server.address = "";
+	server.host = "";
+	server.port = 0;
 	server.server_name = "";
 	server.isDefaultServer = false;
 	server.errpage = "";

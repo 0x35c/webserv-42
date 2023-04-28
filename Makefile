@@ -1,6 +1,7 @@
 NAME	= webserv
 SRCS	= parsing/parseConfFile.cpp \
 		  parsing/parseLine.cpp \
+		  parsing/attributeFunction.cpp \
 		  parsing/initializeStruct.cpp \
 		  parsing/utils.cpp \
 		  server/main.cpp \

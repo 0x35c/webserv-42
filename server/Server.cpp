@@ -37,23 +37,24 @@ void Server::listenForRequest(void) {
 }
 
 void Server::respondToRequest(void) {
+	bool canSend = setStatusCode();
 	std::ifstream file(_requestHeader["PATH"].c_str(), std::ios::in | std::ios::binary);
 
 	file.seekg(0, std::ios::end);
 	long fileSize = file.tellg();
 	file.seekg(0, std::ios::beg);
 
-	if (fileSize <= 0)
-		exitWithError("error: empty or missing file\n");
+	if (canSend == false)
+		fileSize = 0;
 	std::ostringstream ss;
-	ss << "HTTP/1.1 200 OK\r\n";
+	ss << "HTTP/1.1 " << _statusCode << "\r\n";
 	ss << "Content-type: " + _requestHeader["TYPE"] + "\r\n";
 	ss << "Content-Length: " << fileSize << "\r\n\r\n";
 	write(_clientfd, ss.str().c_str(), ss.str().size());
 	ss.str("");
 	ss.clear();
 
-	while (!file.eof()) {
+	while (!file.eof() && canSend) {
 		if (fileSize > BUFFER_SIZE) {
 			file.read((char *)_buffer, BUFFER_SIZE);
 			ss.write(_buffer, BUFFER_SIZE);

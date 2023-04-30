@@ -42,3 +42,16 @@
 //
 // 503 - Service Unavailable => The server cannot handle the
 // request, must send a Retry-After attribute too
+
+bool Server::setStatusCode(void) {
+	std::ifstream file;
+
+	file.open(_requestHeader["PATH"].c_str());
+	if (!file) {
+		_statusCode = "404 Not Found";
+		return (false);
+	}
+	else
+		_statusCode = "200 OK";
+	return (true);
+}

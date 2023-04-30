@@ -1,11 +1,8 @@
 NAME	= webserv
-SRCS	= parsing/parseConfFile.cpp \
-		  parsing/parseLine.cpp \
-		  parsing/initializeStruct.cpp \
-		  parsing/utils.cpp \
-		  server/main.cpp \
+SRCS	= server/main.cpp \
 		  server/Server.cpp\
-		  server/request.cpp
+		  server/request.cpp\
+		  server/status_code.cpp
 CC 		= c++
 CFLAGS  = -Wall -Wextra -Werror -std=c++98 -g
 OBJS    = $(SRCS:.cpp=.o)

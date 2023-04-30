@@ -22,12 +22,14 @@ class Server {
 		void readRequest(void);
 		void respondToRequest(void);
 		void exitWithError(const std::string& errorMessage);
+		bool setStatusCode(void);
 
 	// Private attributes
 	private:
 		int _sockfd;
 		int	_clientfd;
 		int _port;
+		std::string _statusCode;
 		std::map<std::string, std::string> _requestHeader;
 		std::string _ipAddr;
 		const char* _buffer;

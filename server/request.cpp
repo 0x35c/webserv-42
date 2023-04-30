@@ -71,29 +71,47 @@ static void processPostLine(std::string line, strMap& _requestHeader, int lineTo
 		_requestHeader.insert(strPair(lineToken, str));
 }
 
+static int getLineToken(std::string line) {
+	if (line.find("POST") || line.find("GET") || line.find("DELETE"))
+		return (HEAD);
+	if (line.find("Host:"))
+		return (HOST);
+	else if (line.find("User-Agent:"))
+		return (USER_AGENT);
+	else if (line.find("Accept:"))
+		return (ACCEPT);
+	else if (line.find("Accept-Language:"))
+		return (ACCEPT_LANGUAGE);
+	else if (line.find("Accept-Encoding:"))
+		return (ACCEPT_ENCODING);
+	else if (line.find("Content-Type:"))
+		return (CONTENT_TYPE);
+	else if (line.find("Content-Length:"))
+		return (CONTENT_LENGTH);
+	else
+		return (-2);
+}
+
 static void parseRequest(std::string request, strMap& _requestHeader, int method) {
 	int i = 0;
-	int lineNumber = 0;
+	int lineToken = 0;
 	std::string line;
 
 	while (request[i])
 	{
-		while ((request[i] && request[i] != '\n' && lineNumber != BODY) || (request[i] && lineNumber == BODY))
+		while ((request[i] && request[i] != '\n' && lineToken != BODY) || (request[i] && lineToken == BODY))
 		{
 			line += request[i];
 			i++;
 		}	
+		lineToken = getLineToken(line);
 		if (line == "\r")
-			lineNumber = BODY;
+			lineToken = BODY;
 		if (method == GET)
-			processGetLine(line, _requestHeader, lineNumber);
-		else if (method == POST && lineNumber != BODY)
-			processPostLine(line, _requestHeader, lineNumber);
-		if (lineNumber != BODY) {
-			lineNumber++;
-			i++;
-		}
-		if (lineNumber != BODY)
+			processGetLine(line, _requestHeader, lineToken);
+		else if (method == POST && lineToken != BODY)
+			processPostLine(line, _requestHeader, lineToken);
+		if (lineToken != BODY)
 			line.clear();
 	}
 	_requestHeader.insert(strPair(BODY, line));

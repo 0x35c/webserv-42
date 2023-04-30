@@ -46,12 +46,14 @@
 bool Server::setStatusCode(void) {
 	std::ifstream file;
 
-	file.open(_requestHeader["PATH"].c_str());
-	if (!file) {
+	file.open(_requestHeader[HEAD].c_str());
+	if (!file && _method != POST) {
 		_statusCode = "404 Not Found";
 		return (false);
 	}
+	else if (_method == POST)
+		_statusCode = "201 Created";
 	else
-		_statusCode = "200 OK";
+		_statusCode = "201 OK";
 	return (true);
 }

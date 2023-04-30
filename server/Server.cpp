@@ -29,16 +29,15 @@ void Server::listenForRequest(void) {
 	if (listen(_sockfd, 1) < 0)
 		exitWithError("error: listen failed\n");
 	std::ostringstream ss;
-    ss << "\n*** Listening on ADDRESS: "
-        << inet_ntoa(_sockAddr.sin_addr)
+    ss << "\n*** Listening on ADDRESS: " << inet_ntoa(_sockAddr.sin_addr)
         << " PORT: " << ntohs(_sockAddr.sin_port)
         << " ***\n\n";
 	std::cout << ss.str() << std::endl;
 }
 
-void Server::respondToRequest(void) {
+void Server::respondToGetRequest(void) {
 	bool canSend = setStatusCode();
-	std::ifstream file(_requestHeader["PATH"].c_str(), std::ios::in | std::ios::binary);
+	std::ifstream file(_requestHeader[HEAD].c_str(), std::ios::in | std::ios::binary);
 
 	file.seekg(0, std::ios::end);
 	long fileSize = file.tellg();
@@ -48,7 +47,7 @@ void Server::respondToRequest(void) {
 		fileSize = 0;
 	std::ostringstream ss;
 	ss << "HTTP/1.1 " << _statusCode << "\r\n";
-	ss << "Content-type: " + _requestHeader["TYPE"] + "\r\n";
+	ss << "Content-type: " + _requestHeader[ACCEPT] + "\r\n";
 	ss << "Content-Length: " << fileSize << "\r\n\r\n";
 	write(_clientfd, ss.str().c_str(), ss.str().size());
 	ss.str("");
@@ -68,6 +67,19 @@ void Server::respondToRequest(void) {
 		ss.str("");
 		ss.clear();
 	}
+	file.close();
+}
+
+void Server::respondToPostRequest(void) {
+	setStatusCode();
+	std::fstream file(_requestHeader[HEAD].c_str(), std::fstream::out);
+
+	std::ostringstream ss;
+	ss << "HTTP/1.1 " << _statusCode << "\r\n";
+	ss << "Content-type: " + _requestHeader[ACCEPT] + "\r\n";
+	ss << "Content-Length: " << _requestHeader[CONTENT_LENGTH] << "\r\n\r\n";
+	write(_clientfd, ss.str().c_str(), ss.str().size());
+	file << _requestHeader[BODY];
 	file.close();
 }
 

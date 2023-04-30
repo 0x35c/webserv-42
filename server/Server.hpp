@@ -20,7 +20,10 @@ class Server {
 		void bindPort(void);
 		void acceptRequest(void);
 		void readRequest(void);
-		void respondToRequest(void);
+		void respondToGetRequest(void);
+		void respondToPostRequest(void);
+		void respondToDeleteRequest(void);
+		void errorOnRequest(void);
 		void exitWithError(const std::string& errorMessage);
 		bool setStatusCode(void);
 
@@ -29,8 +32,9 @@ class Server {
 		int _sockfd;
 		int	_clientfd;
 		int _port;
+		int _method;
 		std::string _statusCode;
-		std::map<std::string, std::string> _requestHeader;
+		strMap _requestHeader;
 		std::string _ipAddr;
 		const char* _buffer;
 		sockaddr_in _sockAddr;

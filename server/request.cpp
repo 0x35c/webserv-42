@@ -2,7 +2,7 @@
 
 static std::string getToken(const std::string& str, char sep, int pos){
 	std::string token;
-	int			cur_pos;
+	int cur_pos;
 
 	cur_pos = 1;
 	for (uint64_t i = 0; i < str.size(); i++) {
@@ -19,7 +19,7 @@ static std::string getToken(const std::string& str, char sep, int pos){
 	return (token);
 }
 
-static void processGetLine(std::string line, strMap& _requestHeader, int lineToken) {
+static void processLine(std::string line, strMap& _requestHeader, int lineToken, int method) {
 	std::string str = getToken(line, ' ', 2);
 	int pos = str.find('\r');
 	if (pos > 0)
@@ -27,37 +27,19 @@ static void processGetLine(std::string line, strMap& _requestHeader, int lineTok
 	switch (lineToken) {
 		case HEAD:
 			{
-				if (str == "/")
+				if (str == "/" && method == GET)
 					_requestHeader.insert(strPair(HEAD, "server/index.html"));
-				else {
+				else if (method == GET) {
 					str.erase(0, 1);
+					/* std::cout << str << std::endl; */
 					_requestHeader.insert(strPair(HEAD, "server/" + str));
 				}
-			}
-			break;
-		case ACCEPT:
-			str = getToken(str, ',', 1);
-			break;
-		default:
-			break;	
-	}
-	if (lineToken != HEAD)
-		_requestHeader.insert(strPair(lineToken, str));
-}
-
-static void processPostLine(std::string line, strMap& _requestHeader, int lineToken) {
-	std::string str = getToken(line, ' ', 2);
-	int pos = str.find('\r');
-	if (pos > 0)
-		str.erase(pos, 1);
-	switch (lineToken) {
-		case HEAD:
-			{
-				if (str == "/")
+				else if (str == "/" && method == POST)
 					_requestHeader.insert(strPair(HEAD, "server/default"));
-				else {
+				else if (method == POST) {
 					str.erase(0, 1);
-					_requestHeader.insert(strPair(HEAD, "server/" + str));
+					/* std::cout << str << std::endl; */
+					_requestHeader.insert(strPair(HEAD, str));
 				}
 			}
 			break;
@@ -94,7 +76,7 @@ static int getLineToken(std::string line) {
 
 static void parseRequest(std::string request, strMap& _requestHeader, int method) {
 	int i = 0;
-	int lineToken = 0;
+	int lineToken;
 	std::string line;
 
 	while (request[i])
@@ -104,17 +86,21 @@ static void parseRequest(std::string request, strMap& _requestHeader, int method
 			line += request[i];
 			i++;
 		}	
-		lineToken = getLineToken(line);
 		if (line == "\r")
 			lineToken = BODY;
-		if (method == GET)
-			processGetLine(line, _requestHeader, lineToken);
-		else if (method == POST && lineToken != BODY)
-			processPostLine(line, _requestHeader, lineToken);
+		else if (lineToken != BODY)
+			lineToken = getLineToken(line);
 		if (lineToken != BODY)
+			processLine(line, _requestHeader, lineToken, method);
+		if (lineToken != BODY) {
 			line.clear();
+			i++;
+		}
 	}
-	_requestHeader.insert(strPair(BODY, line));
+	if (method == POST) {
+		line.erase(0, 2);
+		_requestHeader.insert(strPair(BODY, line));
+	}
 }
 
 static int getMethod(std::string buffer) {

@@ -42,7 +42,7 @@ enum methods {
 };
 
 enum attributes {
-	HEAD = 1,
+	HEAD,
 	HOST,
 	USER_AGENT,
 	ACCEPT,

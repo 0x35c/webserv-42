@@ -1,11 +1,15 @@
-NAME	= webserv
-SRCS	= server/main.cpp \
-		  server/Server.cpp\
-		  server/request.cpp\
-		  server/status_code.cpp
-CC 		= c++
-CFLAGS  = -Wall -Wextra -Werror -std=c++98 -g
-OBJS    = $(SRCS:.cpp=.o)
+MAKEFLAGS += -j
+
+NAME	:= webserv
+SRCS	:= server/main.cpp\
+		   server/Server.cpp\
+		   server/request.cpp\
+		   server/status_code.cpp
+HEADERS := server/include.hpp\
+		   server/Server.hpp
+CC 		:= c++
+CFLAGS  := -Wall -Wextra -Werror -std=c++98 -g
+OBJS    := $(SRCS:.cpp=.o)
 
 all: $(NAME)
 
@@ -15,8 +19,8 @@ run: all
 $(NAME): $(OBJS)
 	$(CC) -o $(NAME) $(OBJS)
 
-.cpp.o:
-	$(CC) $(CFLAGS) -c $< -o $(<:.cpp=.o)
+%.o: %.cpp $(HEADERS)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
 	rm -f $(OBJS)

@@ -1,8 +1,7 @@
 #include "Server.hpp"
 
 static std::string getToken(const std::string& str, char sep, int pos){
-	std::string token;
-	int cur_pos;
+	std::string token; int cur_pos;
 
 	cur_pos = 1;
 	for (uint64_t i = 0; i < str.size(); i++) {
@@ -19,7 +18,7 @@ static std::string getToken(const std::string& str, char sep, int pos){
 	return (token);
 }
 
-static void processLine(std::string line, strMap& _requestHeader, int lineToken, int method) {
+void Server::processLine(std::string line, int lineToken) {
 	std::string str = getToken(line, ' ', 2);
 	int pos = str.find('\r');
 	if (pos > 0)
@@ -27,27 +26,28 @@ static void processLine(std::string line, strMap& _requestHeader, int lineToken,
 	switch (lineToken) {
 		case HEAD:
 			{
-				if (str == "/" && method == GET)
+				if (str == "/" && _method == GET)
 					_requestHeader.insert(strPair(HEAD, "server/index.html"));
-				else if (method == GET) {
+				else if (_method == GET) {
 					str.erase(0, 1);
-					/* std::cout << str << std::endl; */
 					_requestHeader.insert(strPair(HEAD, "server/" + str));
 				}
-				else if (str == "/" && method == POST)
+				else if (str == "/" && _method == POST)
 					_requestHeader.insert(strPair(HEAD, "server/default"));
-				else if (method == POST) {
+				else if (_method == POST) {
 					str.erase(0, 1);
-					/* std::cout << str << std::endl; */
 					_requestHeader.insert(strPair(HEAD, str));
 				}
 			}
+			break;
+		case BOUNDARY:
+			_boundary = str.substr(str.find("="), str.npos);
 			break;
 		case ACCEPT:
 			str = getToken(str, ',', 1);
 			break;
 		default:
-			break;	
+			break;
 	}
 	if (lineToken != HEAD)
 		_requestHeader.insert(strPair(lineToken, str));
@@ -66,15 +66,18 @@ static int getLineToken(std::string line) {
 		return (ACCEPT_LANGUAGE);
 	else if (line.find("Accept-Encoding:"))
 		return (ACCEPT_ENCODING);
-	else if (line.find("Content-Type:"))
+	else if (line.find("Content-Type:")) {
+		if (line.find("boundary"))
+			return (BOUNDARY);
 		return (CONTENT_TYPE);
+	}
 	else if (line.find("Content-Length:"))
 		return (CONTENT_LENGTH);
 	else
 		return (-2);
 }
 
-static void parseRequest(std::string request, strMap& _requestHeader, int method) {
+void Server::parseRequest(const char* request) {
 	int i = 0;
 	int lineToken;
 	std::string line;
@@ -91,13 +94,14 @@ static void parseRequest(std::string request, strMap& _requestHeader, int method
 		else if (lineToken != BODY)
 			lineToken = getLineToken(line);
 		if (lineToken != BODY)
-			processLine(line, _requestHeader, lineToken, method);
+			processLine(line, lineToken);
 		if (lineToken != BODY) {
 			line.clear();
-			i++;
+			if (request[i])
+				i++;
 		}
 	}
-	if (method == POST) {
+	if (_method == POST) {
 		line.erase(0, 2);
 		_requestHeader.insert(strPair(BODY, line));
 	}
@@ -114,12 +118,14 @@ static int getMethod(std::string buffer) {
 }
 
 void Server::readRequest(void) {
-	char buffer[30720] = {0};
-	if (read(_clientfd, buffer, 30720 - 1) < 0)
+	char* buffer = new char[BUFFER_SIZE];
+	int	end;
+	if ((end = read(_clientfd, buffer, (BUFFER_SIZE) - 1)) < 0)
 		exitWithError("error: failed to read client socket\n");
-	std::cout << buffer << "\n";
+	buffer[end] = '\0';
+	write(1, buffer, 1000);
 	_method = getMethod(buffer);
-	parseRequest(buffer, _requestHeader, _method);
+	parseRequest(buffer);
 	switch (_method) {
 		case GET:
 			respondToGetRequest();	
@@ -131,4 +137,5 @@ void Server::readRequest(void) {
 			break;
 	}
 	_requestHeader.clear();
+	delete []buffer;
 }

@@ -26,6 +26,8 @@ class Server {
 		void errorOnRequest(void);
 		void exitWithError(const std::string& errorMessage);
 		bool setStatusCode(void);
+		void processLine(std::string line, int lineToken);
+		void parseRequest(const char* request);
 
 	// Private attributes
 	private:
@@ -34,6 +36,7 @@ class Server {
 		int _port;
 		int _method;
 		std::string _statusCode;
+		std::string _boundary;
 		strMap _requestHeader;
 		std::string _ipAddr;
 		const char* _buffer;

@@ -54,6 +54,6 @@ bool Server::setStatusCode(void) {
 	else if (_method == POST)
 		_statusCode = "201 Created";
 	else
-		_statusCode = "201 OK";
+		_statusCode = "200 OK";
 	return (true);
 }

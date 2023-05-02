@@ -49,6 +49,7 @@ enum attributes {
 	ACCEPT_LANGUAGE,
 	ACCEPT_ENCODING,
 	CONTENT_TYPE,
+	BOUNDARY,
 	CONTENT_LENGTH,
 	ORIGIN,
 	CONNECTION,
@@ -67,6 +68,6 @@ enum attributes {
 #define IP "0.0.0.0"
 #define IMG 1
 #define HTML 2
-#define BUFFER_SIZE 2 << 18
+#define BUFFER_SIZE 2 << 15
 
 #endif

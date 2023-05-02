@@ -72,14 +72,17 @@ void Server::respondToGetRequest(void) {
 
 void Server::respondToPostRequest(void) {
 	setStatusCode();
-	std::fstream file(_requestHeader[HEAD].c_str(), std::fstream::out);
+	std::string body = _requestHeader[BODY];
+	std::string name = body.substr(0, body.find("="));
+	body.erase(0, body.find("=") + 1);
+	std::fstream file(name.c_str(), std::fstream::out);
 
 	std::ostringstream ss;
 	ss << "HTTP/1.1 " << _statusCode << "\r\n";
 	ss << "Content-type: " + _requestHeader[ACCEPT] + "\r\n";
 	ss << "Content-Length: " << _requestHeader[CONTENT_LENGTH] << "\r\n\r\n";
 	write(_clientfd, ss.str().c_str(), ss.str().size());
-	file << _requestHeader[BODY];
+	file << body;
 	file.close();
 }
 
@@ -96,7 +99,6 @@ void Server::acceptRequest(void) {
 			<< ntohs(_sockAddr.sin_port);
 			exitWithError("error: log\n");
 		}
-		std::cout << "someone connected.\n";
 		readRequest();
 		close(_clientfd);
 	}

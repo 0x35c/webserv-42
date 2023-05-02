@@ -1,5 +1,5 @@
-#ifndef INCLUDE_HPP
-#define INCLUDE_HPP
+#ifndef INCLUDE_HPP_
+#define INCLUDE_HPP_
 
 #include <sstream>
 #include <cstring>
@@ -42,6 +42,7 @@ enum methods {
 };
 
 enum attributes {
+	BODY,
 	HEAD,
 	HOST,
 	USER_AGENT,
@@ -60,8 +61,7 @@ enum attributes {
 	SEC_FETCH_SITE,
 	SEC_FETCH_USER,
 	PRAGMA,
-	CACHE_CONTROL,
-	BODY = -1
+	CACHE_CONTROL
 };
 
 #define PORT 8080
@@ -69,5 +69,8 @@ enum attributes {
 #define IMG 1
 #define HTML 2
 #define BUFFER_SIZE 2 << 15
+#define END -1;
+
+void trimString(std::string& string, const char* charset);
 
 #endif

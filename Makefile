@@ -4,6 +4,7 @@ NAME	:= webserv
 SRCS	:= server/main.cpp\
 		   server/Server.cpp\
 		   server/request.cpp\
+		   server/utils.cpp\
 		   server/status_code.cpp
 HEADERS := server/include.hpp\
 		   server/Server.hpp

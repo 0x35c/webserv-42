@@ -27,7 +27,7 @@ class Server {
 		void exitWithError(const std::string& errorMessage);
 		bool setStatusCode(void);
 		void processLine(std::string line, int lineToken);
-		void parseRequest(const char* request);
+		void parseRequest(std::string request);
 
 	// Private attributes
 	private:

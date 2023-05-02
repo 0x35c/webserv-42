@@ -53,6 +53,8 @@ bool Server::setStatusCode(void) {
 	}
 	else if (_method == POST)
 		_statusCode = "201 Created";
+	else if (_method == DELETE)
+		_statusCode = "204 No Content";
 	else
 		_statusCode = "200 OK";
 	return (true);

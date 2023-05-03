@@ -3,9 +3,10 @@ MAKEFLAGS += -j
 NAME	:= webserv
 SRCS	:= server/main.cpp\
 		   server/Server.cpp\
-		   server/request.cpp\
+		   server/Request.cpp\
+		   server/parseRequest.cpp\
 		   server/utils.cpp\
-		   server/status_code.cpp
+		   server/statusCode.cpp
 HEADERS := server/include.hpp\
 		   server/Server.hpp
 CC 		:= c++

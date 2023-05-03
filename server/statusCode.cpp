@@ -1,4 +1,4 @@
-#include "Server.hpp"
+#include "Request.hpp"
 
 // Here is a short summary of the most common status codes
 //
@@ -43,7 +43,7 @@
 // 503 - Service Unavailable => The server cannot handle the
 // request, must send a Retry-After attribute too
 
-bool Server::setStatusCode(void) {
+bool Request::setStatusCode(void) {
 	std::ifstream file;
 
 	file.open(_requestHeader[HEAD].c_str());

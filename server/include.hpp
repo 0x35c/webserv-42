@@ -19,18 +19,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <string.h>
-/*
-struct in_addr{
-	unsigned long s_addr;
-};
 
-struct sockaddr_in {
-	short sin_family;
-	unsigned short sin_port;
-	struct in_addr sin_addr;
-	char sin_zero[8];
-};
-*/
 typedef std::map<int, std::string> strMap;
 typedef std::pair<int, std::string> strPair;
 
@@ -68,7 +57,7 @@ enum attributes {
 #define IP "0.0.0.0"
 #define IMG 1
 #define HTML 2
-#define BUFFER_SIZE 2 << 15
+#define BUFFER_SIZE 2 << 18
 #define END -1;
 
 void trimString(std::string& string, const char* charset);

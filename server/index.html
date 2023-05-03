@@ -15,15 +15,16 @@ function myFunction() {
 	<img width="594" height="396" src="averdon.jpg" alt="Waow">
 		<button type="button" onclick="myFunction()">Try it</button>
 	<form method="post">
-			<input type="text" name="averdon">
+		<input type="text" name="averdon">
 	</form>
 	<form method="post" enctype="multipart/form-data">
-			<label for="image">Choose an image:</label>
-			<input type="file" id="image" name="image">
-			<input type="submit" value="Upload">
+		<label for="image">Choose an image:</label>
+		<input type="file" id="image" name="image">
+		<input type="submit" value="Upload">
 	</form>
-	<a data-confirm="Are you sure ?" data-method="delete" href="../test">
-		Delete a file named "test"</a>
+	<form method="delete">
+		<input type="text" id="fileToDelete" name="file">
+	</form>
 	<form method="post">
 			<input type="text" name="ltruchel">
 	</form>

@@ -1,4 +1,4 @@
-#include "Server.hpp"
+#include "Request.hpp"
 
 static std::string getToken(const std::string& str, char sep, int pos){
 	std::string token;
@@ -19,7 +19,7 @@ static std::string getToken(const std::string& str, char sep, int pos){
 	return (token);
 }
 
-void Server::processLine(std::string line, int lineToken) {
+void Request::processLine(std::string line, int lineToken) {
 	std::string str = getToken(line, ' ', 2);
 	int pos = str.find('\r');
 	if (pos > 0)
@@ -107,7 +107,7 @@ static void processBody(std::string& boundary, std::string& line, strMap& reques
 	}
 }
 
-void Server::parseRequest(std::string request) {
+void Request::parseRequest(std::string request) {
 	size_t i = 0;
 	int lineToken;
 	std::string line;
@@ -138,41 +138,4 @@ void Server::parseRequest(std::string request) {
 		processBody(_boundary, line, _requestHeader);
 		_requestHeader.insert(strPair(BODY, line));
 	}
-}
-
-static int getMethod(std::string buffer) {
-	if (buffer.find("GET") != buffer.npos)	
-		return (GET);
-	else if (buffer.find("POST") != buffer.npos)	
-		return (POST);
-	else if (buffer.find("DELETE") != buffer.npos)	
-		return (DELETE);
-	return (ERROR);
-}
-
-void Server::readRequest(void) {
-	char* buffer_c = new char[BUFFER_SIZE];
-	std::string buffer;
-	int	end;
-	if ((end = read(_clientfd, buffer_c, (BUFFER_SIZE) - 1)) < 0)
-		exitWithError("error: failed to read client socket\n");
-	write(1, buffer_c, end);
-	buffer.assign(buffer_c, end);
-	_method = getMethod(buffer);
-	parseRequest(buffer);
-	switch (_method) {
-		case GET:
-			respondToGetRequest();	
-			break;
-		case POST:
-			respondToPostRequest();	
-			break;
-		case DELETE:
-			respondToDeleteRequest();	
-			break;
-		default:
-			break;
-	}
-	_requestHeader.clear();
-	delete []buffer_c;
 }

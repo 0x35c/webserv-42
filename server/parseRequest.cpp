@@ -102,6 +102,10 @@ static void processBody(std::string& boundary, std::string& line, strMap& reques
 		}
 		std::string tmp = line.substr(line.find("\r\n\r\n"), line.length());
 		tmp.erase(0, 4);
+		tmp.erase(tmp.end() - 1);
+		size_t pos = tmp.rfind("\n");
+		tmp.erase(pos, pos - tmp.length());
+		tmp.erase(tmp.end() - 1);
 		requestHeader[BODY].clear();
 		requestHeader[BODY] = tmp;
 	}

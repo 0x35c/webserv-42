@@ -31,7 +31,7 @@ void Request::processLine(std::string line, int lineToken) {
 					_requestHeader.insert(strPair(HEAD, "server/index.html"));
 				else if (_method == GET) {
 					str.erase(0, 1);
-					_requestHeader.insert(strPair(HEAD, "server/" + str));
+					_requestHeader.insert(strPair(HEAD, str));
 				}
 				else if (str == "/" && _method == POST)
 					_requestHeader.insert(strPair(HEAD, "server/default"));

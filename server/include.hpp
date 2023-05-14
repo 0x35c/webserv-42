@@ -18,6 +18,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <dirent.h>
 #include <string.h>
 
 typedef std::map<int, std::string> strMap;
@@ -57,7 +58,7 @@ enum attributes {
 #define IP "0.0.0.0"
 #define IMG 1
 #define HTML 2
-#define BUFFER_SIZE 2 << 18
+#define BUFFER_SIZE 2 << 28
 #define END -1;
 
 void trimString(std::string& string, const char* charset);

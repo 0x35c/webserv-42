@@ -15,37 +15,42 @@ Request&	Request::operator=(const Request& other) {
 
 void Request::respondToGetRequest(void) {
 	bool canSend = setStatusCode();
-	std::ifstream file(_requestHeader[HEAD].c_str(), std::ios::in | std::ios::binary);
+	DIR* directory = opendir(_requestHeader[HEAD].c_str());
+	if (directory == NULL) {
+		std::ifstream file(_requestHeader[HEAD].c_str(), std::ios::in | std::ios::binary);
 
-	file.seekg(0, std::ios::end);
-	long fileSize = file.tellg();
-	file.seekg(0, std::ios::beg);
+		file.seekg(0, std::ios::end);
+		long fileSize = file.tellg();
+		file.seekg(0, std::ios::beg);
 
-	if (canSend == false)
-		fileSize = 0;
-	std::ostringstream ss;
-	ss << "HTTP/1.1 " << _statusCode << "\r\n";
-	ss << "Content-type: " + _requestHeader[ACCEPT] + "\r\n";
-	ss << "Content-Length: " << fileSize << "\r\n\r\n";
-	write(_clientfd, ss.str().c_str(), ss.str().size());
-	ss.str("");
-	ss.clear();
-
-	while (!file.eof() && canSend) {
-		if (fileSize > BUFFER_SIZE) {
-			file.read((char *)_buffer, BUFFER_SIZE);
-			ss.write(_buffer, BUFFER_SIZE);
-			fileSize -= BUFFER_SIZE;
-		}
-		else {
-			file.read((char *)_buffer, fileSize);
-			ss.write(_buffer, fileSize);
-		}
+		if (canSend == false)
+			fileSize = 0;
+		std::ostringstream ss;
+		ss << "HTTP/1.1 " << _statusCode << "\r\n";
+		ss << "Content-type: " + _requestHeader[ACCEPT] + "\r\n";
+		ss << "Content-Length: " << fileSize << "\r\n\r\n";
 		write(_clientfd, ss.str().c_str(), ss.str().size());
 		ss.str("");
 		ss.clear();
+
+		while (!file.eof() && canSend) {
+			if (fileSize > BUFFER_SIZE) {
+				file.read((char *)_buffer, BUFFER_SIZE);
+				ss.write(_buffer, BUFFER_SIZE);
+				fileSize -= BUFFER_SIZE;
+			}
+			else {
+				file.read((char *)_buffer, fileSize);
+				ss.write(_buffer, fileSize);
+			}
+			write(_clientfd, ss.str().c_str(), ss.str().size());
+			ss.str("");
+			ss.clear();
+		}
+		file.close();
 	}
-	file.close();
+	else
+		directoryListing(directory);		
 }
 
 void Request::respondToPostRequest(void) {

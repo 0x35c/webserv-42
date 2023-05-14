@@ -6,6 +6,7 @@ SRCS	:= main.cpp\
 		   Request.cpp\
 		   parseRequest.cpp\
 		   utils.cpp\
+		   directoryListing.cpp\
 		   statusCode.cpp
 CC 		:= c++
 CFLAGS  := -Wall -Wextra -Werror -std=c++98 -g -MMD

@@ -23,6 +23,7 @@ class Request: protected Server {
 		void processLine(std::string line, int lineToken);
 		void parseRequest(std::string request);
 		bool setStatusCode(void);
+		void directoryListing(DIR* directory);
 
 	private:
 		int	_clientfd;

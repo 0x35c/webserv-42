@@ -75,8 +75,10 @@ void Request::respondToGetRequest(void) {
 		}
 		file.close();
 	}
-	else
-		directoryListing(directory);		
+	else {
+		_isDirectory = true;
+		directoryListing(directory, _requestHeader[HEAD]);
+	}
 }
 
 void Request::respondToPostRequest(void) {
@@ -144,6 +146,7 @@ void Request::readRequest(void) {
 	write(1, buffer_c, end);
 	buffer.assign(buffer_c, end);
 	_method = getMethod(buffer);
+	_isDirectory = false;
 	parseRequest(buffer);
 	switch (_method) {
 		case GET:

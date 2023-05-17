@@ -1,15 +1,16 @@
-NAME	= webserv
-SRCS	= parsing/parseConfFile.cpp \
-		  parsing/parseLine.cpp \
-		  parsing/attributeFunction.cpp \
-		  parsing/initializeStruct.cpp \
-		  parsing/utils.cpp \
-		  server/main.cpp \
-		  server/Server.cpp\
-		  server/request.cpp
-CC 		= c++
-CFLAGS  = -Wall -Wextra -Werror -std=c++98 -g
-OBJS    = $(SRCS:.cpp=.o)
+MAKEFLAGS += -j
+
+NAME	:= webserv
+SRCS	:= main.cpp\
+		   Server.cpp\
+		   Request.cpp\
+		   parseRequest.cpp\
+		   utils.cpp\
+		   directoryListing.cpp\
+		   statusCode.cpp
+CC 		:= g++
+CFLAGS  := -Wall -Wextra -Werror -std=c++98 -g -MMD
+OBJS    := $(addprefix objs/, $(SRCS:.cpp=.o))
 
 all: $(NAME)
 
@@ -19,15 +20,19 @@ run: all
 $(NAME): $(OBJS)
 	$(CC) -o $(NAME) $(OBJS)
 
-.cpp.o:
-	$(CC) $(CFLAGS) -c $< -o $(<:.cpp=.o)
+objs/%.o: server/%.cpp
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS)
+	rm -rf objs 
 
 fclean: clean
 	rm -f $(NAME)
 
-re: fclean all
+re: fclean
+	make
 
 .PHONY: all clean fclean re
+
+-include $(OBJS:.o=.d)

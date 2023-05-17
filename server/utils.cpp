@@ -28,10 +28,10 @@ const std::vector<std::string> splitString(const std::string string, const char 
 	return (strings);
 }
 
-void	trimString(std::string & string)
+void trimString(std::string& string, const char* charset)
 {
-	size_t start = string.find_first_not_of(WHITESPACE);
-	size_t end = string.find_last_not_of(WHITESPACE);
+	size_t start = string.find_first_not_of(charset);
+	size_t end = string.find_last_not_of(charset);
 	if (start != std::string::npos)
 		string = string.substr(start, end - start + 1);
 	else

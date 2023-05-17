@@ -1,39 +1,56 @@
-#ifndef SERVER_HPP_
-#define SERVER_HPP_
+#pragma once
 
+#include <sys/socket.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sstream>
+#include <iostream>
+#include <cerrno>
+#include <csignal>
+#include <vector>
+#include <exception>
+#include <cstring>
 #include <string>
-#include <map>
-#include "include.hpp"
+#include <sstream>
+#include <fcntl.h>
+#include <fstream>
+#include <utility>
+#include <sys/select.h>
+
+#define IP_ADRR "0.0.0.0"
+#define PORT 8080
+#define LISTEN_BACKLOG 128
 
 class Server {
 	public:
-		Server(std::string ipAddr, int port);
-		~Server(void);
-		
-	// Private member functions
-	private:
 		Server(void);
-		Server(const Server& other);
-		Server&	operator= (const Server& other);
-		void createServerSocket(void);
-		void listenForRequest(void);
-		void bindPort(void);
-		void acceptRequest(void);
-		void readRequest(void);
-		void respondToRequest(void);
-		void exitWithError(const std::string& errorMessage);
+		Server(Server const &other);
+		Server &operator=(Server const &other);
+		~Server();
 
-	// Private attributes
+		void start(void);
+		void emergencyStop(void);
+
+		class ServerException : public std::exception {
+			public:
+				char const *what(void) const throw();
+		};
+
+
 	private:
-		int _sockfd;
-		int	_clientfd;
-		int _port;
-		std::map<std::string, std::string> _requestHeader;
-		std::string _ipAddr;
-		const char* _buffer;
-		sockaddr_in _sockAddr;
-		socklen_t _sockAddr_len;
-		
-};
+		struct _request {
+			int			fd;
+			bool		isDone;
+		};
 
-#endif
+		int			_socketFd;
+		sockaddr_in	_socketAddress;
+		socklen_t	_socketAddressLen;
+		int			_nbConnections;
+		fd_set 		_readSet;
+
+		void _loop(void);
+		void _readFile(char const *file, std::string &buffer);
+		void _acceptConnection(void);
+		void _processRequest(int fd);
+};

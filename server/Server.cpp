@@ -1,120 +1,137 @@
+#include <cstdlib>
+
 #include "Server.hpp"
-#include <iostream>
+#include "Request.hpp"
 
-void Server::exitWithError(const std::string& errorMessage) {
-	std::cerr << errorMessage;
-	close(_sockfd);
-	std::exit(1);
+Server::Server(void)
+	: _nbConnections(0)
+{
+	_socketAddress.sin_family = AF_INET;
+	_socketAddress.sin_port = htons(PORT);
+	_socketAddress.sin_addr.s_addr = inet_addr(IP_ADRR);
+	_socketAddressLen = sizeof(_socketAddress);
+
+	_socketFd = socket(AF_INET, SOCK_STREAM, 0);
+	if (_socketFd < 0)
+		throw ServerException();
+
+	if (bind(_socketFd, (sockaddr*)&_socketAddress, _socketAddressLen) < 0)
+		throw ServerException();
+
+	if (listen(_socketFd, LISTEN_BACKLOG) < 0)
+		throw ServerException();
+
+	FD_ZERO(&_readSet);
+	FD_SET(_socketFd, &_readSet);
 }
 
-void Server::createServerSocket(void) {
-	//create the socket server
-	_sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if (_sockfd < 0)
-		exitWithError("error: socket failed\n");
+Server::Server(Server const &other)
+	: _socketFd(other._socketFd), _socketAddress(other._socketAddress), _socketAddressLen(other._socketAddressLen)
+{}
 
-	int option = 1;
-	if (setsockopt(_sockfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(int)) < 0)
-		exitWithError("error: setsockopt failed\n");
+Server &Server::operator=(Server const &other)
+{
+	_socketFd = other._socketFd;
+	_socketAddress = other._socketAddress;
+	_socketAddressLen = other._socketAddressLen;
+	return *this;
 }
 
-void Server::bindPort(void) {
-	//bind to the PORT with the informations above
-	if (bind(_sockfd, (sockaddr*)&_sockAddr, _sockAddr_len) < 0)
-		exitWithError("error: binding failed\n");
+Server::~Server()
+{
+	close(_socketFd);
 }
 
-void Server::listenForRequest(void) {
-	//start to listen to request (= wait)
-	if (listen(_sockfd, 1) < 0)
-		exitWithError("error: listen failed\n");
-	std::ostringstream ss;
-    ss << "\n*** Listening on ADDRESS: "
-        << inet_ntoa(_sockAddr.sin_addr)
-        << " PORT: " << ntohs(_sockAddr.sin_port)
-        << " ***\n\n";
-	std::cout << ss.str() << std::endl;
+void Server::emergencyStop(void)
+{
+	for (int i = 3; i < FD_SETSIZE; i++)
+		close(i);
+	std::cout << "server stopped\n";
+	std::exit(EXIT_FAILURE);
 }
 
-void Server::respondToRequest(void) {
-	std::ifstream file(_requestHeader["PATH"].c_str(), std::ios::in | std::ios::binary);
+void Server::start(void)
+{
+	fd_set readSet;
 
-	file.seekg(0, std::ios::end);
-	long fileSize = file.tellg();
-	file.seekg(0, std::ios::beg);
+	std::cout << "listening on " << IP_ADRR << ":" << PORT << "\n";
+	while (true)
+	{
+		readSet = _readSet;
 
-	if (fileSize <= 0)
-		exitWithError("error: empty or missing file\n");
-	std::ostringstream ss;
-	ss << "HTTP/1.1 200 OK\r\n";
-	ss << "Content-type: " + _requestHeader["TYPE"] + "\r\n";
-	ss << "Content-Length: " << fileSize << "\r\n\r\n";
-	write(_clientfd, ss.str().c_str(), ss.str().size());
-	ss.str("");
-	ss.clear();
-
-	while (!file.eof()) {
-		if (fileSize > BUFFER_SIZE) {
-			file.read((char *)_buffer, BUFFER_SIZE);
-			ss.write(_buffer, BUFFER_SIZE);
-			fileSize -= BUFFER_SIZE;
+		if (select(FD_SETSIZE + 1, &readSet, NULL, NULL, NULL) < 0)
+		{
+			if (errno == EINTR)
+				emergencyStop();
+			throw ServerException();
 		}
-		else {
-			file.read((char *)_buffer, fileSize);
-			ss.write(_buffer, fileSize);
+
+		for (int i = 0; i < FD_SETSIZE; i++)
+		{
+			if (FD_ISSET(i, &readSet))
+			{
+				if (i == _socketFd)
+					_acceptConnection();
+				else
+					_processRequest(i);
+			}
 		}
-		write(_clientfd, ss.str().c_str(), ss.str().size());
-		ss.str("");
-		ss.clear();
 	}
+}
+
+void Server::_readFile(char const *filePath, std::string &buffer)
+{
+	std::ifstream file(filePath, std::ios::binary);
+	if (!file.is_open())
+		throw ServerException();
+
+	file.seekg(0, file.end);
+	std::size_t size = file.tellg();
+	file.seekg(0, file.beg);
+
+	buffer.resize(size);
+	file.read(&buffer[0], size);
+
 	file.close();
 }
 
-void Server::acceptRequest(void) {
-	while (true)
+void Server::_acceptConnection(void)
+{
+	int clientSocket = accept(_socketFd, (sockaddr*)&_socketAddress, &_socketAddressLen);
+	if (clientSocket < 0)
 	{
-		//when someone connect, it accept it
-		_clientfd = accept(_sockfd, (sockaddr*)&_sockAddr, &_sockAddr_len);
-		if (_clientfd < 0) {
-			std::ostringstream ss;
-			ss <<
-			"Server failed to accept incoming connection from ADDRESS: "
-			<< inet_ntoa(_sockAddr.sin_addr) << "; PORT: "
-			<< ntohs(_sockAddr.sin_port);
-			exitWithError("error: log\n");
-		}
-		std::cout << "someone connected.\n";
-		readRequest();
-		close(_clientfd);
+		if (errno != EAGAIN && errno != EWOULDBLOCK)
+			throw ServerException();
+		return ;
 	}
+
+	FD_SET(clientSocket, &_readSet);
+	++_nbConnections;
+	std::cout << "accepted connection\n";
 }
 
-Server::Server(std::string ipAddr, int port): _buffer(new char[BUFFER_SIZE]) {
-	_ipAddr = ipAddr;
-	_port = port;
-	_sockAddr_len = sizeof(_sockAddr);
-	_sockAddr.sin_family = AF_INET;
-	_sockAddr.sin_port = htons(_port);
-	_sockAddr.sin_addr.s_addr = inet_addr(_ipAddr.c_str());
-	
-	createServerSocket();
-	bindPort();
-	listenForRequest();
-	if (_sockfd > 0)
-		acceptRequest();
+void Server::_processRequest(int fd)
+{
+	std::string header_buffer(1024, 0);
+	int rc = recv(fd, &header_buffer[0], 1024, 0);
+	if (rc <= 0)
+	{
+		close(fd);
+		FD_CLR(fd, &_readSet);
+		--_nbConnections;
+		if (rc < 0)
+			std::cerr << "error: " << strerror(errno) << "\n";
+		std::cout << "closed connection\n";
+		return ;
+	}
+	std::cout << rc << " bytes read\n";
+
+	Request request(fd);
+	request.readRequest(header_buffer);
+
+	std::cout << "sent response\n";
 }
 
-Server::Server(const Server& other){
-	(void)other;
-}
-
-Server&	Server::operator=(const Server &other){
-	(void)other;
-	return (*this);
-}
-
-Server::~Server(void){
-	delete [] _buffer;
-	close(_clientfd);
-	close(_sockfd);
+char const *Server::ServerException::what(void) const throw() {
+	return strerror(errno);
 }

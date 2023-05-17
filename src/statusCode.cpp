@@ -64,7 +64,7 @@ bool Request::setStatusCode(void) {
 	std::cout << _requestHeader[HEAD] << std::endl;
 	if (!file && _method != POST) {
 		_statusCode = "404 Not Found";
-		_requestHeader[HEAD] = "server/404";
+		_requestHeader[HEAD] = "src/404";
 		return (false);
 	}
 	else if (_method == GET && _isDirectory == true)

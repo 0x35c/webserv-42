@@ -9,7 +9,7 @@ SRCS	:= main.cpp\
 		   directoryListing.cpp\
 		   statusCode.cpp
 CC 		:= g++
-CFLAGS  := -Wall -Wextra -Werror -std=c++98 -g -MMD
+CFLAGS  := -Wall -Wextra -std=c++98 -g -MMD
 OBJS    := $(addprefix objs/, $(SRCS:.cpp=.o))
 
 all: $(NAME)
@@ -20,7 +20,7 @@ run: all
 $(NAME): $(OBJS)
 	$(CC) -o $(NAME) $(OBJS)
 
-objs/%.o: server/%.cpp
+objs/%.o: src/%.cpp
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
 

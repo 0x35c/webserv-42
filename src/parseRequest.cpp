@@ -36,7 +36,7 @@ static std::string getExtension(const std::string& fileName) {
 void Request::processLine(std::string line, int lineToken) {
 	std::string str = getToken(line, ' ', 2);
 	int pos = str.find('\r');
-	std::string root = "server";
+	std::string root = "www";
 	if (pos > 0)
 		str.erase(pos, 1);
 	switch (lineToken) {
@@ -131,7 +131,7 @@ static void processBody(std::string& boundary, std::string& line, strMap& reques
 	}
 }
 
-void Request::parseRequest(std::string request) {
+void Request::parseRequest(const std::string& request) {
 	size_t i = 0;
 	int lineToken;
 	std::string line;
@@ -142,24 +142,18 @@ void Request::parseRequest(std::string request) {
 		{
 			line += request[i];
 			i++;
-		}	
-		if (line == "\r") {
-			lineToken = BODY;
-			break ;
 		}
+		if (line == "\r")
+			break ;
 		lineToken = getLineToken(line);
 		processLine(line, lineToken);
 		line.clear();
 		i++;
 	}
 	line.clear();
-	while (i < request.length()) {
-		line += request[i];
-		i++;
-	}
-	if (_method == POST) {
-		line.erase(0, 2);
-		processBody(_boundary, line, _requestHeader);
-		_requestHeader.insert(strPair(BODY, line));
-	}
+	size_t pos = request.find("\r\n\r\n");
+	if (pos == std::string::npos)
+		throw std::invalid_argument("invalid header");
+	line = request.substr(pos + 4, std::string::npos);
+	_requestHeader[BODY] = line;
 }

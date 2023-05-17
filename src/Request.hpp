@@ -63,7 +63,7 @@ class Request {
 		void respondToDeleteRequest(void);
 		void errorOnRequest(void);
 		void processLine(std::string line, int lineToken);
-		void parseRequest(std::string request);
+		void parseRequest(const std::string& request);
 		bool setStatusCode(void);
 		void directoryListing(DIR* directory, const std::string& dirName);
 

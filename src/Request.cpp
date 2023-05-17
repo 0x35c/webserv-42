@@ -144,3 +144,7 @@ void Request::readRequest(std::string const &rawRequest) {
 Request::~Request(void){
 	delete [] _buffer;
 }
+
+int Request::getClientfd(void) const {
+	return _clientfd;
+}

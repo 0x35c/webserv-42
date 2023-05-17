@@ -53,6 +53,7 @@ class Request {
 
 		void readRequest(std::string const &rawRequest);
 
+		int getClientfd(void) const;
 
 	private:
 		Request(void);

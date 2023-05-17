@@ -1,14 +1,15 @@
 #include <iostream>
 #include <csignal>
+#include <cstdlib>
 
 #include "Server.hpp"
 
 void signal_handler(int signum)
 {
 	(void)signum;
+	throw std::exception();
 }
 
-//start program and connect to "localhost:8080"
 int	main(void)
 {
 	signal(SIGINT, signal_handler);
@@ -16,13 +17,16 @@ int	main(void)
 	Server server;
 	try
 	{
+		server.addAddress("0.0.0.0", 8080);
+		server.addAddress("0.0.0.0", 8081);
 		server.start();
 	}
 	catch(const std::exception& e)
 	{
 		std::cerr << e.what() << '\n';
 		server.emergencyStop();
+		return EXIT_FAILURE;
 	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }

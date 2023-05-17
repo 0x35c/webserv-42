@@ -16,19 +16,17 @@
 #include <fstream>
 #include <utility>
 #include <sys/select.h>
+#include <vector>
 
-#define IP_ADRR "0.0.0.0"
-#define PORT 8080
 #define LISTEN_BACKLOG 128
 
 class Server {
 	public:
 		Server(void);
-		Server(Server const &other);
-		Server &operator=(Server const &other);
 		~Server();
 
 		void start(void);
+		void addAddress(std::string const &address, int port);
 		void emergencyStop(void);
 
 		class ServerException : public std::exception {
@@ -38,19 +36,33 @@ class Server {
 
 
 	private:
+		struct _socket {
+			int			fd;
+			sockaddr_in	address;
+		};
+
 		struct _request {
 			int			fd;
 			bool		isDone;
 		};
 
-		int			_socketFd;
-		sockaddr_in	_socketAddress;
-		socklen_t	_socketAddressLen;
-		int			_nbConnections;
-		fd_set 		_readSet;
+		struct _socketFinder {
+			int _fd;
+			_socketFinder(int fd) : _fd(fd) {}
+			bool operator()(_socket const &socket) const {
+				return socket.fd == _fd;
+			}
+		};
 
-		void _loop(void);
+		std::vector<_socket>	_sockets;
+		socklen_t				_addressLen;
+		int						_nbConnections;
+		fd_set 					_readSet;
+
+		Server(Server const &other);
+		Server &operator=(Server const &other);
+
 		void _readFile(char const *file, std::string &buffer);
-		void _acceptConnection(void);
+		void _acceptConnection(_socket const &sock);
 		void _processRequest(int fd);
 };

@@ -1,77 +1,86 @@
 #include <cstdlib>
+#include <algorithm>
 
 #include "Server.hpp"
 #include "Request.hpp"
 
 Server::Server(void)
-	: _nbConnections(0)
+	: _addressLen(sizeof(sockaddr_in)), _nbConnections(0)
 {
-	_socketAddress.sin_family = AF_INET;
-	_socketAddress.sin_port = htons(PORT);
-	_socketAddress.sin_addr.s_addr = inet_addr(IP_ADRR);
-	_socketAddressLen = sizeof(_socketAddress);
-
-	_socketFd = socket(AF_INET, SOCK_STREAM, 0);
-	if (_socketFd < 0)
-		throw ServerException();
-
-	if (bind(_socketFd, (sockaddr*)&_socketAddress, _socketAddressLen) < 0)
-		throw ServerException();
-
-	if (listen(_socketFd, LISTEN_BACKLOG) < 0)
-		throw ServerException();
-
 	FD_ZERO(&_readSet);
-	FD_SET(_socketFd, &_readSet);
+}
+
+void Server::addAddress(std::string const &address, int port)
+{
+	struct _socket newSocket;
+	newSocket.address.sin_family = AF_INET;
+	newSocket.address.sin_port = htons(port);
+	newSocket.address.sin_addr.s_addr = inet_addr(address.c_str());
+
+	newSocket.fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (newSocket.fd < 0)
+		throw ServerException();
+
+	int option = 1;
+	if (setsockopt(newSocket.fd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(int)) < 0)
+		throw ServerException();
+
+	if (bind(newSocket.fd, (sockaddr*)&newSocket.address, _addressLen) < 0)
+		throw ServerException();
+
+	if (listen(newSocket.fd, LISTEN_BACKLOG) < 0)
+		throw ServerException();
+
+	FD_SET(newSocket.fd, &_readSet);
+	_sockets.push_back(newSocket);
 }
 
 Server::Server(Server const &other)
-	: _socketFd(other._socketFd), _socketAddress(other._socketAddress), _socketAddressLen(other._socketAddressLen)
-{}
+{
+	(void)other;
+}
 
 Server &Server::operator=(Server const &other)
 {
-	_socketFd = other._socketFd;
-	_socketAddress = other._socketAddress;
-	_socketAddressLen = other._socketAddressLen;
+	(void)other;
 	return *this;
 }
 
 Server::~Server()
 {
-	close(_socketFd);
+	for (std::vector<_socket>::iterator it = _sockets.begin(); it != _sockets.end(); ++it)
+		close(it->fd);
 }
 
 void Server::emergencyStop(void)
 {
-	for (int i = 3; i < FD_SETSIZE; i++)
-		close(i);
+	for (std::vector<_socket>::iterator it = _sockets.begin(); it != _sockets.end(); ++it)
+		close(it->fd);
 	std::cout << "server stopped\n";
-	std::exit(EXIT_FAILURE);
 }
 
 void Server::start(void)
 {
 	fd_set readSet;
 
-	std::cout << "listening on " << IP_ADRR << ":" << PORT << "\n";
+	for (std::vector<_socket>::iterator it = _sockets.begin(); it != _sockets.end(); ++it)
+	{
+		std::cout << "listening on " << inet_ntoa(it->address.sin_addr) << ":" << ntohs(it->address.sin_port) << "\n";
+	}
 	while (true)
 	{
 		readSet = _readSet;
 
 		if (select(FD_SETSIZE + 1, &readSet, NULL, NULL, NULL) < 0)
-		{
-			if (errno == EINTR)
-				emergencyStop();
 			throw ServerException();
-		}
 
 		for (int i = 0; i < FD_SETSIZE; i++)
 		{
 			if (FD_ISSET(i, &readSet))
 			{
-				if (i == _socketFd)
-					_acceptConnection();
+				std::vector<_socket>::iterator socket = std::find_if(_sockets.begin(), _sockets.end(), _socketFinder(i));
+				if (socket != _sockets.end())
+					_acceptConnection(*socket);
 				else
 					_processRequest(i);
 			}
@@ -95,9 +104,9 @@ void Server::_readFile(char const *filePath, std::string &buffer)
 	file.close();
 }
 
-void Server::_acceptConnection(void)
+void Server::_acceptConnection(_socket const &sock)
 {
-	int clientSocket = accept(_socketFd, (sockaddr*)&_socketAddress, &_socketAddressLen);
+	int clientSocket = accept(sock.fd, (sockaddr*)&sock.address, &_addressLen);
 	if (clientSocket < 0)
 	{
 		if (errno != EAGAIN && errno != EWOULDBLOCK)

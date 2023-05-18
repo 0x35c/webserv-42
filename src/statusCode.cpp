@@ -46,7 +46,9 @@
 static std::string handleDirectoryCode(strMap& _requestHeader) {
 	std::string dirName = _requestHeader[HEAD];
 
+#if DEBUG
 	std::cout << "Directory: " << dirName << std::endl;
+#endif
 	if (dirName[dirName.length() - 1] != '/') {
 		_requestHeader[LOCATION] = "/" + dirName + "/";
 		return ("308 Permanent Redirect");
@@ -61,7 +63,9 @@ bool Request::setStatusCode(void) {
 	std::ifstream file;
 
 	file.open(_requestHeader[HEAD].c_str());
+#if DEBUG
 	std::cout << _requestHeader[HEAD] << std::endl;
+#endif
 	if (!file && _method != POST) {
 		_statusCode = "404 Not Found";
 		_requestHeader[HEAD] = "src/404";

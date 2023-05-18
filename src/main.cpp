@@ -7,6 +7,7 @@
 void signal_handler(int signum)
 {
 	(void)signum;
+	throw std::runtime_error("SIGINT received");
 }
 
 int	main(void)

@@ -34,7 +34,9 @@ void Request::directoryListing(DIR* directory, const std::string& dirName) {
 	</html>";
 	size_t fileSize = tmpHTML.length();
 
+#if DEBUG
 	std::cout << "Status code: " << _statusCode << std::endl;
+#endif
 	std::ostringstream ss;
 	ss << "HTTP/1.1 " << _statusCode << "\r\n";
 	if (_requestHeader[LOCATION] != "")

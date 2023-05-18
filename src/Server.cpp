@@ -65,27 +65,14 @@ void Server::start(void)
 		if (select(FD_SETSIZE + 1, &readSet, NULL, NULL, NULL) < 0)
 			throw ServerException();
 
-		for (int i = 0; i < FD_SETSIZE; i++)
-		{
-			if (FD_ISSET(i, &readSet))
-			{
-				socketMap::iterator socket = _sockets.find(i);
-				if (socket != _sockets.end())
-				{
-					_acceptConnection(socket->first, &socket->second);
-					continue ;
-				}
+		for (socketMap::iterator it = _sockets.begin(); it != _sockets.end(); ++it)
+			if (FD_ISSET(it->first, &readSet))
+				_acceptConnection(it->first, &it->second);
 
-				requestMap::iterator request = _requests.find(i);
-				if (request != _requests.end())
-				{
-					_processRequest(request->first, request->second);
-					continue ;
-				}
-
-				throw std::runtime_error("Unknown file descriptor");
-			}
-		}
+		for (requestMap::iterator it = _requests.begin(); it != _requests.end(); ++it)
+			if (FD_ISSET(it->first, &readSet))
+				if (_processRequest(it->first, it->second))
+					_requests.erase(it++);
 	}
 }
 
@@ -101,10 +88,12 @@ void Server::_acceptConnection(int socketFd, sockaddr_in *address)
 
 	FD_SET(fd, &_readSet);
 	_requests[fd] = Request(fd);
+#if DEBUG
 	std::cout << "accepted connection\n";
+#endif
 }
 
-void Server::_processRequest(int clientFd, Request &request)
+bool Server::_processRequest(int clientFd, Request &request)
 {
 	std::string header_buffer(1024, 0);
 	int rc = recv(clientFd, &header_buffer[0], 1024, 0);
@@ -112,19 +101,26 @@ void Server::_processRequest(int clientFd, Request &request)
 	{
 		close(clientFd);
 		FD_CLR(clientFd, &_readSet);
-		_requests.erase(clientFd);
 		if (rc < 0)
 			std::cerr << "error: " << strerror(errno) << "\n";
+#if DEBUG
 		std::cout << "closed connection\n";
-		return ;
+#endif
+		return true;
 	}
+#if DEBUG
 	std::cout << rc << " bytes read\n";
+#endif
 
 	if (request.readRequest(header_buffer))
 	{
 		request.respondToRequest();
+#if DEBUG
 		std::cout << "response sent\n";
+#endif
 	}
+
+	return false;
 }
 
 char const *Server::ServerException::what(void) const throw() {

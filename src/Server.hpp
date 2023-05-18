@@ -20,6 +20,7 @@
 #include "Request.hpp"
 
 #define LISTEN_BACKLOG 128
+#define DEBUG 0
 
 class Server {
 	public:
@@ -48,5 +49,5 @@ class Server {
 		Server &operator=(Server const &other);
 
 		void _acceptConnection(int socketFd, sockaddr_in *address);
-		void _processRequest(int clientFd, Request &request);
+		bool _processRequest(int clientFd, Request &request);
 };

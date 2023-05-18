@@ -61,7 +61,9 @@ static void getQuery(std::string& query, const std::string& name) {
 void Request::respondToGetRequest(void) {
 	editName(_requestHeader[HEAD]);
 	getQuery(_query, _requestHeader[HEAD]);
+#if DEBUG
 	std::cout << _query << std::endl;
+#endif
 	DIR* directory = opendir(_requestHeader[HEAD].c_str());
 	_isDirectory = false;
 	if (directory == NULL) {

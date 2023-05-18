@@ -43,7 +43,9 @@ void Request::processLine(std::string line, int lineToken) {
 		case HEAD:
 			{
 				str.erase(0, 1);
+#if DEBUG
 				std::cout << str << "\n";
+#endif
 				if (_method == GET && str.find(root) == std::string::npos) {
 					if (str.length() == 0)
 						_requestHeader.insert(strPair(HEAD, root + "/index.html"));
@@ -156,7 +158,9 @@ void Request::parseHeader(const std::string& buffer) {
 		throw std::invalid_argument("invalid header");
 	line = buffer.substr(pos + 4, std::string::npos);
 	_requestHeader[BODY] = line;
+#if DEBUG
 	std::cout << "HEADER" << std::endl;
+#endif
 }
 
 bool Request::parseBody(const std::string& buffer) {

@@ -25,3 +25,8 @@ li span {
 	border-radius: 8px;
 	background-color: #FFA07A;
 }
+
+form {
+	display: inline-block;
+	margin: 10px;
+}

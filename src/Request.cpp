@@ -7,7 +7,8 @@ Request::Request(void)
 {}
 
 Request::Request(int clientfd)
-	: _clientfd(clientfd), _method(-1) {}
+	: _clientfd(clientfd), _method(-1)
+{}
 
 Request::Request(const Request& other)
 	: _clientfd(other._clientfd), _method(other._method), _statusCode(other._statusCode),
@@ -60,7 +61,9 @@ static void getQuery(std::string& query, const std::string& name) {
 void Request::respondToGetRequest(void) {
 	editName(_requestHeader[HEAD]);
 	getQuery(_query, _requestHeader[HEAD]);
+#if DEBUG
 	std::cout << _query << std::endl;
+#endif
 	DIR* directory = opendir(_requestHeader[HEAD].c_str());
 	_isDirectory = false;
 	if (directory == NULL) {
@@ -94,7 +97,7 @@ void Request::respondToPostRequest(void) {
 	std::ostringstream ss;
 	ss << "HTTP/1.1 " << _statusCode << "\r\n";
 	ss << "Content-type: " << _requestHeader[ACCEPT] << "\r\n";
-	ss << "Location: www/uploads/" << _requestHeader[HEAD] << "\r\n\r\n";
+	ss << "Location: /" << "\r\n\r\n";
 	send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
 
 	/* std::cout << _requestHeader[BODY]; */

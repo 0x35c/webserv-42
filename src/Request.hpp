@@ -47,7 +47,10 @@ enum attributes {
 
 class Request {
 	public:
+		Request(void);
 		Request(int clientfd);
+		Request(const Request& other);
+		Request& operator=(const Request& other);
 		~Request(void);
 
 		// Public member functions
@@ -58,9 +61,6 @@ class Request {
 
 	// Private member functions
 	private:
-		Request(void);
-		Request(const Request& other);
-		Request& operator=(const Request& other);
 		void respondToGetRequest(void);
 		void respondToPostRequest(void);
 		void respondToDeleteRequest(void);

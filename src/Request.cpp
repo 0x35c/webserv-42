@@ -6,17 +6,28 @@ Request::Request(int clientfd)
 	: _clientfd(clientfd), _method(-1)
 {}
 
-Request::Request(const Request& other) {
-	(void)other;
-}
+Request::Request(const Request& other)
+	: _clientfd(other._clientfd), _method(other._method), _statusCode(other._statusCode),
+		_boundary(other._boundary), _query(other._query), _buffer(other._buffer),
+		_requestHeader(other._requestHeader), _isDirectory(other._isDirectory)
+{}
 
 Request&	Request::operator=(const Request& other) {
-	(void)other;
-	return (*this);
+	if (this != &other) {
+		_clientfd = other._clientfd;
+		_method = other._method;
+		_statusCode = other._statusCode;
+		_boundary = other._boundary;
+		_query = other._query;
+		_buffer = other._buffer;
+		_requestHeader = other._requestHeader;
+		_isDirectory = other._isDirectory;
+	}
+	return *this;
 }
 
 static void editName(std::string& name) {
-	while (1) {
+	while (true) {
 		char* name_c = (char *)name.c_str();
 		size_t len;
 		if (name.find("%") != std::string::npos) {
@@ -103,11 +114,11 @@ void Request::respondToDeleteRequest(void) {
 }
 
 static int getMethod(std::string buffer) {
-	if (buffer.find("GET") != buffer.npos)	
+	if (buffer.find("GET") != buffer.npos)
 		return (GET);
-	else if (buffer.find("POST") != buffer.npos)	
+	else if (buffer.find("POST") != buffer.npos)
 		return (POST);
-	else if (buffer.find("DELETE") != buffer.npos)	
+	else if (buffer.find("DELETE") != buffer.npos)
 		return (DELETE);
 	return (ERROR);
 }

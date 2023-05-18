@@ -122,9 +122,9 @@ void Server::_processRequest(int clientFd, Request &request)
 
 	if (request.readRequest(header_buffer))
 	{
-		
+		request.respondToRequest();
+		std::cout << "response sent\n";
 	}
-	std::cout << "sent response\n";
 }
 
 char const *Server::ServerException::what(void) const throw() {

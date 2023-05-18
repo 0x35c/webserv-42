@@ -7,7 +7,6 @@
 void signal_handler(int signum)
 {
 	(void)signum;
-	throw std::exception();
 }
 
 int	main(void)

@@ -2,13 +2,17 @@
 #include <cstdlib>
 #include <iostream>
 
+Request::Request(void)
+	: _clientfd(-1), _method(-1)
+{}
+
 Request::Request(int clientfd)
 	: _clientfd(clientfd), _method(-1)
 {}
 
 Request::Request(const Request& other)
 	: _clientfd(other._clientfd), _method(other._method), _statusCode(other._statusCode),
-		_boundary(other._boundary), _query(other._query), _buffer(other._buffer),
+		_boundary(other._boundary), _query(other._query),
 		_requestHeader(other._requestHeader), _isDirectory(other._isDirectory)
 {}
 
@@ -19,7 +23,6 @@ Request&	Request::operator=(const Request& other) {
 		_statusCode = other._statusCode;
 		_boundary = other._boundary;
 		_query = other._query;
-		_buffer = other._buffer;
 		_requestHeader = other._requestHeader;
 		_isDirectory = other._isDirectory;
 	}

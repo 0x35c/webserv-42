@@ -7,8 +7,7 @@ Request::Request(void)
 {}
 
 Request::Request(int clientfd)
-	: _clientfd(clientfd), _method(-1)
-{}
+	: _clientfd(clientfd), _method(-1) {}
 
 Request::Request(const Request& other)
 	: _clientfd(other._clientfd), _method(other._method), _statusCode(other._statusCode),
@@ -90,15 +89,30 @@ void Request::respondToGetRequest(void) {
 
 void Request::respondToPostRequest(void) {
 	setStatusCode();
-	std::string body = _requestHeader[BODY];
-	std::fstream file(_requestHeader[HEAD].c_str(), std::fstream::out);
+	std::ofstream file(("www/uploads/" + _requestHeader[HEAD]).c_str());
 
 	std::ostringstream ss;
 	ss << "HTTP/1.1 " << _statusCode << "\r\n";
-	ss << "Content-type: " + _requestHeader[ACCEPT] + "\r\n";
-	ss << "Content-Length: " << _requestHeader[CONTENT_LENGTH] << "\r\n\r\n";
-	write(_clientfd, ss.str().c_str(), ss.str().size());
-	file << body;
+	ss << "Content-type: " << _requestHeader[ACCEPT] << "\r\n";
+	ss << "Location: www/uploads/" << _requestHeader[HEAD] << "\r\n\r\n";
+	send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
+
+	/* std::cout << _requestHeader[BODY]; */
+	/* std::string buffer(BUFFER_SIZE, 0); */
+	/* size_t length = 0; */
+	/* while (length < _requestHeader[BODY].length()) { */
+	/* 	if (length + BUFFER_SIZE < _requestHeader[BODY].length()) { */
+	/* 		buffer = _requestHeader[BODY].substr(length, length + BUFFER_SIZE); */
+	/* 		length += BUFFER_SIZE; */
+	/* 	} */
+	/* 	else */
+	/* 		buffer = _requestHeader[BODY].substr(length, _requestHeader[BODY].length()); */
+	/* 	file << buffer; */
+	/* 	buffer.clear(); */
+	/* } */
+
+	file << _requestHeader[BODY];
+	/* file.write(_requestHeader[BODY].c_str(), _requestHeader[BODY].length()); */
 	file.close();
 }
 
@@ -111,17 +125,17 @@ void Request::respondToDeleteRequest(void) {
 	ss << "HTTP/1.1 " << _statusCode << "\r\n";
 	ss << "Content-type: " + _requestHeader[ACCEPT] + "\r\n";
 	ss << "Content-Length: " << _requestHeader[CONTENT_LENGTH] << "\r\n\r\n";
-	write(_clientfd, ss.str().c_str(), ss.str().size());
+	send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
 	file << body;
 	file.close();
 }
 
 static int getMethod(std::string buffer) {
-	if (buffer.find("GET") != buffer.npos)
+	if (buffer.find("GET") != std::string::npos)
 		return (GET);
-	else if (buffer.find("POST") != buffer.npos)
+	else if (buffer.find("POST") != std::string::npos)
 		return (POST);
-	else if (buffer.find("DELETE") != buffer.npos)
+	else if (buffer.find("DELETE") != std::string::npos)
 		return (DELETE);
 	return (ERROR);
 }

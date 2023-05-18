@@ -14,6 +14,8 @@
 typedef std::map<int, std::string> strMap;
 typedef std::pair<int, std::string> strPair;
 
+#define BUFFER_SIZE 4096
+
 enum methods {
 	ERROR,
 	GET,

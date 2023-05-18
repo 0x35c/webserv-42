@@ -106,8 +106,8 @@ void Server::_acceptConnection(int socketFd, sockaddr_in *address)
 
 void Server::_processRequest(int clientFd, Request &request)
 {
-	std::string header_buffer(1024, 0);
-	int rc = recv(clientFd, &header_buffer[0], 1024, 0);
+	std::string header_buffer(8192, 0);
+	int rc = recv(clientFd, &header_buffer[0], 8192, 0);
 	if (rc <= 0)
 	{
 		close(clientFd);
@@ -122,7 +122,9 @@ void Server::_processRequest(int clientFd, Request &request)
 
 	if (request.readRequest(header_buffer))
 	{
+		std::cout << "Call to respond request" << std::endl;
 		request.respondToRequest();
+		_requests[request.getClientfd()] = Request(request.getClientfd());
 		std::cout << "response sent\n";
 	}
 }

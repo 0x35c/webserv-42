@@ -1,7 +1,6 @@
 #include "Request.hpp"
 
 void trimString(std::string& string, const char* charset);
-
 static std::string getToken(const std::string& str, char sep, int pos){
 	std::string token;
 	int cur_pos;
@@ -65,7 +64,6 @@ void Request::processLine(std::string line, int lineToken) {
 			{
 				std::string tmp = getToken(line, ' ', 3);
 				_boundary = tmp.substr(tmp.find("=") + 1, tmp.length());
-				trimString(_boundary, "-\r");
 			}
 			break;
 		case ACCEPT:
@@ -105,6 +103,7 @@ static int getLineToken(std::string line) {
 static void processBody(std::string& boundary, std::string& line, strMap& requestHeader) {
 	int i = 1;
 	std::string str = getToken(line, '\n', i);
+	trimString(boundary, "-\r");
 	trimString(str, "-\r");
 	if (str == boundary) {
 		i++;
@@ -160,19 +159,51 @@ void Request::parseHeader(const std::string& buffer) {
 }
 
 bool Request::parseBody(const std::string& buffer) {
+	static long count = 0;
+	std::cout << count++ << std::endl;
+	/* size_t sizeBody = 0; */
 	_requestHeader[BODY] += buffer;
-	if (_requestHeader[BODY].length() == (size_t)std::atol(_requestHeader[CONTENT_LENGTH].c_str()))
+	/* size_t start = _requestHeader[BODY].find("\r\n\r\n"); */
+	/* size_t end = std::string::npos; */
+	/* if (start != std::string::npos) { */
+	/* 	std::string tmp = _boundary; */
+	/* 	trimString(tmp, "-"); */
+	/* 	std::cout << "Tmp boundary: " << tmp << std::endl; */
+	/* 	std::cout << "Boundary: " << _boundary << std::endl; */
+		
+	/* 	std::cout << "Body: " << _requestHeader[BODY]; */
+	/* } */
+	/* if (end != std::string::npos) */
+	/* 	sizeBody = end - start; */
+	/* /1* std::string header = _requestHeader[BODY].substr(0, _requestHeader[BODY].find("\r\n\r\n")); *1/ */
+	/* /1* std::cout << "Header: " << header << std::endl; *1/ */
+	/* /1* sizeHeader = header.length() + 4 + _boundary.length(); *1/ */
+	/* std::cout << "BOUNDARY: " << _boundary << std::endl; */
+	/* std::cout << "Start: " << start << std::endl; */
+	/* std::cout << "End: " << end << std::endl; */
+	/* std::cout << "Content Length: " << _requestHeader[CONTENT_LENGTH] << std::endl;; */
+	/* std::cout << "Size body: " << sizeBody << std::endl; */
+	size_t pos = buffer.find("-----------------------------");
+	if (pos != std::string::npos && pos != 0) {
+		/* std::cout << buffer << std::endl; */
+		/* std::cout << buffer; */
+		std::cout << "Body finished" << std::endl;
 		return (true);
+	}
+	/* if (sizeBody == (size_t)std::atol(_requestHeader[CONTENT_LENGTH].c_str())) { */
+	/* 	std::cout << "Body finished" << std::endl; */
+	/* 	return (true); */
+	/* } */
 	return (false);
 }
 
 void Request::respondToRequest(void) {
-	processBody(_boundary, _requestHeader[BODY], _requestHeader);
 	switch (_method) {
 		case GET:
 			respondToGetRequest();	
 			break;
 		case POST:
+			processBody(_boundary, _requestHeader[BODY], _requestHeader);
 			respondToPostRequest();	
 			break;
 		case DELETE:

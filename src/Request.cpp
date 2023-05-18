@@ -3,7 +3,7 @@
 #include <iostream>
 
 Request::Request(int clientfd)
-	: _clientfd(clientfd), _method(-1), _buffer(new char[BUFFER_SIZE])
+	: _clientfd(clientfd), _method(-1)
 {}
 
 Request::Request(const Request& other) {
@@ -62,18 +62,8 @@ void Request::respondToGetRequest(void) {
 		ss << "HTTP/1.1 " << _statusCode << "\r\n";
 		ss << "Content-type: " << _requestHeader[ACCEPT] << "\r\n";
 		ss << "Content-Length: " << fileSize << "\r\n\r\n";
+		ss << file.rdbuf();
 
-		while (!file.eof()) {
-			if (fileSize > BUFFER_SIZE) {
-				file.read((char *)_buffer, BUFFER_SIZE);
-				ss.write(_buffer, BUFFER_SIZE);
-				fileSize -= BUFFER_SIZE;
-			}
-			else {
-				file.read((char *)_buffer, fileSize);
-				ss.write(_buffer, fileSize);
-			}
-		}
 		send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
 		file.close();
 	}
@@ -122,25 +112,19 @@ static int getMethod(std::string buffer) {
 	return (ERROR);
 }
 
-void Request::readRequest(std::string const &rawRequest) {
-	_method = getMethod(rawRequest);
-	parseRequest(rawRequest);
-	switch (_method) {
-		case GET:
-			respondToGetRequest();	
-			break;
-		case POST:
-			respondToPostRequest();	
-			break;
-		case DELETE:
-			respondToDeleteRequest();	
-			break;
-		default:
-			break;
+bool Request::readRequest(std::string const &rawRequest) {
+	static bool headerRead = false;
+	if (headerRead == false) {
+		_method = getMethod(rawRequest);
+		parseHeader(rawRequest);
+		headerRead = true;
 	}
-	_requestHeader.clear();
+	else if (_method == GET)
+		return (true);
+	else
+		return (parseBody(rawRequest));
+	return (false);
 }
 
 Request::~Request(void){
-	delete [] _buffer;
 }

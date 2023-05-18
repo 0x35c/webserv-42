@@ -2,11 +2,6 @@ body {
 	background-color: lightblue;
 }
 
-#directory {
-	background-color: rgb(181, 200, 95);
-	font-family: "sans-serif";
-}
-
 ul {
 	list-style-image: url("shark.png");
 	padding: 0;

@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <arpa/inet.h>
+#include <cstdlib>
 
 typedef std::map<int, std::string> strMap;
 typedef std::pair<int, std::string> strPair;
@@ -44,16 +45,17 @@ enum attributes {
 	CACHE_CONTROL
 };
 
-#define BUFFER_SIZE 1024
-
 class Request {
 	public:
 		Request(int clientfd);
 		~Request(void);
 
-		void readRequest(std::string const &rawRequest);
+		// Public member functions
+		bool readRequest(std::string const &rawRequest);
+		void respondToRequest(void);
 
 
+	// Private member functions
 	private:
 		Request(void);
 		Request(const Request& other);
@@ -63,17 +65,18 @@ class Request {
 		void respondToDeleteRequest(void);
 		void errorOnRequest(void);
 		void processLine(std::string line, int lineToken);
-		void parseRequest(const std::string& request);
+		void parseHeader(const std::string& request);
+		bool parseBody(const std::string& buffer);
 		bool setStatusCode(void);
 		void directoryListing(DIR* directory, const std::string& dirName);
 
+	// Private member attributes
 	private:
 		int	_clientfd;
 		int _method;
 		std::string _statusCode;
 		std::string _boundary;
 		std::string _query;
-		const char* _buffer;
 		strMap _requestHeader;
 		bool _isDirectory;
 };

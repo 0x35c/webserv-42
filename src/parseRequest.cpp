@@ -156,6 +156,7 @@ void Request::parseHeader(const std::string& buffer) {
 		throw std::invalid_argument("invalid header");
 	line = buffer.substr(pos + 4, std::string::npos);
 	_requestHeader[BODY] = line;
+	std::cout << "HEADER" << std::endl;
 }
 
 bool Request::parseBody(const std::string& buffer) {

@@ -131,10 +131,10 @@ bool Request::readRequest(std::string const &rawRequest) {
 	if (headerRead == false) {
 		_method = getMethod(rawRequest);
 		parseHeader(rawRequest);
+		if (_method == GET)
+			return (true);
 		headerRead = true;
 	}
-	else if (_method == GET)
-		return (true);
 	else
 		return (parseBody(rawRequest));
 	return (false);

@@ -3,30 +3,22 @@
 <head>
 		<link rel="icon" href="images.png">
 		<link rel="stylesheet" href="style.css">
-<script>
-function myFunction() {
-	document.getElementById("demo").innerHTML = "Paragraph changed.";
-}
-</script>
 </head>
 <body>
 	<h1>HOME</h1>
 	<p id="demo">Hello from your Server :)</p>
-	<img width="600" height="600" src="chriscelaya.jpg" alt="Waow">
-		<button type="button" onclick="myFunction()">Try it</button>
 	<form method="post">
 		<input type="text" name="averdon">
-	</form>
+		<input type="submit" value="Submit">
+	</form><br>
 	<form method="post" enctype="multipart/form-data">
 		<label for="image">Choose an image:</label>
 		<input type="file" id="image" name="image">
 		<input type="submit" value="Upload">
-	</form>
-	<form method="delete">
-		<input type="text" id="fileToDelete" name="file">
-	</form>
+	</form><br>
 	<form method="post">
-			<input type="text" name="ltruchel">
+		<input type="text" name="ltruchel">
+		<input type="submit" value="Submit">
 	</form>
 </body>
 </html>

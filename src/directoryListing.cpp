@@ -7,7 +7,8 @@ void Request::directoryListing(DIR* directory, const std::string& dirName) {
 		<link rel=\"icon\" href=\"images.png\">\
 		<link rel=\"stylesheet\" href=\"style.css\">\
 	</head>\
-	<body id=\"directory\">\
+	<body style=\"background-color: rgb(181, 200, 95);\
+	font-family: \"sans-serif\";\">\
 	<h1>You are on " + dirName + " directory</h1>\
 	<p>\
 	<ul>\

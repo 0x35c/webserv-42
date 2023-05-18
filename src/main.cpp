@@ -7,7 +7,6 @@
 void signal_handler(int signum)
 {
 	(void)signum;
-	throw std::exception();
 }
 
 int	main(void)
@@ -18,13 +17,11 @@ int	main(void)
 	try
 	{
 		server.addAddress("0.0.0.0", 8080);
-		server.addAddress("0.0.0.0", 8081);
 		server.start();
 	}
 	catch(const std::exception& e)
 	{
 		std::cerr << e.what() << '\n';
-		server.emergencyStop();
 		return EXIT_FAILURE;
 	}
 

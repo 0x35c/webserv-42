@@ -2,11 +2,6 @@ body {
 	background-color: lightblue;
 }
 
-#directory {
-	background-color: rgb(181, 200, 95);
-	font-family: "sans-serif";
-}
-
 ul {
 	list-style-image: url("shark.png");
 	padding: 0;
@@ -29,4 +24,9 @@ li span {
 	border: 2px solid #ccc;
 	border-radius: 8px;
 	background-color: #FFA07A;
+}
+
+form {
+	display: inline-block;
+	margin: 10px;
 }

@@ -104,7 +104,7 @@ static int getLineToken(std::string line) {
 
 static void processBody(std::string& boundary, std::string& line, strMap& requestHeader) {
 	int i = 1;
-	std::string str = getToken(line, '\n', i);	
+	std::string str = getToken(line, '\n', i);
 	trimString(str, "-\r");
 	if (str == boundary) {
 		i++;
@@ -131,16 +131,16 @@ static void processBody(std::string& boundary, std::string& line, strMap& reques
 	}
 }
 
-void Request::parseRequest(const std::string& request) {
+void Request::parseHeader(const std::string& buffer) {
 	size_t i = 0;
 	int lineToken;
 	std::string line;
 
-	while (request[i])
+	while (buffer[i])
 	{
-		while (request[i] && request[i] != '\n')
+		while (buffer[i] && buffer[i] != '\n')
 		{
-			line += request[i];
+			line += buffer[i];
 			i++;
 		}
 		if (line == "\r")
@@ -151,9 +151,35 @@ void Request::parseRequest(const std::string& request) {
 		i++;
 	}
 	line.clear();
-	size_t pos = request.find("\r\n\r\n");
+	size_t pos = buffer.find("\r\n\r\n");
 	if (pos == std::string::npos)
 		throw std::invalid_argument("invalid header");
-	line = request.substr(pos + 4, std::string::npos);
+	line = buffer.substr(pos + 4, std::string::npos);
 	_requestHeader[BODY] = line;
+	std::cout << "HEADER" << std::endl;
+}
+
+bool Request::parseBody(const std::string& buffer) {
+	_requestHeader[BODY] += buffer;
+	if (_requestHeader[BODY].length() == (size_t)std::atol(_requestHeader[CONTENT_LENGTH].c_str()))
+		return (true);
+	return (false);
+}
+
+void Request::respondToRequest(void) {
+	processBody(_boundary, _requestHeader[BODY], _requestHeader);
+	switch (_method) {
+		case GET:
+			respondToGetRequest();	
+			break;
+		case POST:
+			respondToPostRequest();	
+			break;
+		case DELETE:
+			respondToDeleteRequest();	
+			break;
+		default:
+			break;
+	}
+	_requestHeader.clear();
 }

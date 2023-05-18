@@ -2,21 +2,35 @@
 #include <cstdlib>
 #include <iostream>
 
-Request::Request(int clientfd)
-	: _clientfd(clientfd), _method(-1), _buffer(new char[BUFFER_SIZE])
+Request::Request(void)
+	: _clientfd(-1), _method(-1)
 {}
 
-Request::Request(const Request& other) {
-	(void)other;
-}
+Request::Request(int clientfd)
+	: _clientfd(clientfd), _method(-1)
+{}
+
+Request::Request(const Request& other)
+	: _clientfd(other._clientfd), _method(other._method), _statusCode(other._statusCode),
+		_boundary(other._boundary), _query(other._query),
+		_requestHeader(other._requestHeader), _isDirectory(other._isDirectory)
+{}
 
 Request&	Request::operator=(const Request& other) {
-	(void)other;
-	return (*this);
+	if (this != &other) {
+		_clientfd = other._clientfd;
+		_method = other._method;
+		_statusCode = other._statusCode;
+		_boundary = other._boundary;
+		_query = other._query;
+		_requestHeader = other._requestHeader;
+		_isDirectory = other._isDirectory;
+	}
+	return *this;
 }
 
 static void editName(std::string& name) {
-	while (1) {
+	while (true) {
 		char* name_c = (char *)name.c_str();
 		size_t len;
 		if (name.find("%") != std::string::npos) {
@@ -62,18 +76,8 @@ void Request::respondToGetRequest(void) {
 		ss << "HTTP/1.1 " << _statusCode << "\r\n";
 		ss << "Content-type: " << _requestHeader[ACCEPT] << "\r\n";
 		ss << "Content-Length: " << fileSize << "\r\n\r\n";
+		ss << file.rdbuf();
 
-		while (!file.eof()) {
-			if (fileSize > BUFFER_SIZE) {
-				file.read((char *)_buffer, BUFFER_SIZE);
-				ss.write(_buffer, BUFFER_SIZE);
-				fileSize -= BUFFER_SIZE;
-			}
-			else {
-				file.read((char *)_buffer, fileSize);
-				ss.write(_buffer, fileSize);
-			}
-		}
 		send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
 		file.close();
 	}
@@ -113,34 +117,32 @@ void Request::respondToDeleteRequest(void) {
 }
 
 static int getMethod(std::string buffer) {
-	if (buffer.find("GET") != buffer.npos)	
+	if (buffer.find("GET") != buffer.npos)
 		return (GET);
-	else if (buffer.find("POST") != buffer.npos)	
+	else if (buffer.find("POST") != buffer.npos)
 		return (POST);
-	else if (buffer.find("DELETE") != buffer.npos)	
+	else if (buffer.find("DELETE") != buffer.npos)
 		return (DELETE);
 	return (ERROR);
 }
 
-void Request::readRequest(std::string const &rawRequest) {
-	_method = getMethod(rawRequest);
-	parseRequest(rawRequest);
-	switch (_method) {
-		case GET:
-			respondToGetRequest();	
-			break;
-		case POST:
-			respondToPostRequest();	
-			break;
-		case DELETE:
-			respondToDeleteRequest();	
-			break;
-		default:
-			break;
+bool Request::readRequest(std::string const &rawRequest) {
+	static bool headerRead = false;
+	if (headerRead == false) {
+		_method = getMethod(rawRequest);
+		parseHeader(rawRequest);
+		if (_method == GET)
+			return (true);
+		headerRead = true;
 	}
-	_requestHeader.clear();
+	else
+		return (parseBody(rawRequest));
+	return (false);
 }
 
 Request::~Request(void){
-	delete [] _buffer;
+}
+
+int Request::getClientfd(void) const {
+	return _clientfd;
 }

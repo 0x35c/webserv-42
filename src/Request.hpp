@@ -54,6 +54,7 @@ class Request {
 		bool readRequest(std::string const &rawRequest);
 		void respondToRequest(void);
 
+		int getClientfd(void) const;
 
 	// Private member functions
 	private:

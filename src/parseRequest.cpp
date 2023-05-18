@@ -104,7 +104,7 @@ static int getLineToken(std::string line) {
 
 static void processBody(std::string& boundary, std::string& line, strMap& requestHeader) {
 	int i = 1;
-	std::string str = getToken(line, '\n', i);	
+	std::string str = getToken(line, '\n', i);
 	trimString(str, "-\r");
 	if (str == boundary) {
 		i++;

@@ -128,3 +128,7 @@ bool Request::readRequest(std::string const &rawRequest) {
 
 Request::~Request(void){
 }
+
+int Request::getClientfd(void) const {
+	return _clientfd;
+}

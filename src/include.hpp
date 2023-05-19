@@ -59,7 +59,6 @@ enum attributes {
 #define IP "0.0.0.0"
 #define IMG 1
 #define HTML 2
-#define BUFFER_SIZE 2 << 28
 #define END -1;
 
 void trimString(std::string& string, const char* charset);

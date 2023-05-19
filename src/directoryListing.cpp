@@ -10,6 +10,7 @@ void Request::directoryListing(DIR* directory, const std::string& dirName) {
 	<body style=\"background-color: rgb(181, 200, 95);\
 	font-family: \"sans-serif\";\">\
 	<h1>You are on " + dirName + " directory</h1>\
+	<h1><a href=\"/index.html\">HOME</a></br></h1>\
 	<p>\
 	<ul>\
 	";

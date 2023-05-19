@@ -95,8 +95,8 @@ void Server::_acceptConnection(int socketFd, sockaddr_in *address)
 
 bool Server::_processRequest(int clientFd, Request &request)
 {
-	std::string header_buffer(8192, 0);
-	int rc = recv(clientFd, &header_buffer[0], 8192, 0);
+	std::string header_buffer(BUFFER_SIZE, 0);
+	int rc = recv(clientFd, &header_buffer[0], BUFFER_SIZE, 0);
 	if (rc <= 0)
 	{
 		close(clientFd);

@@ -71,7 +71,7 @@ class Request {
 		void processLine(std::string line, int lineToken);
 		void parseHeader(const std::string& request);
 		bool parseBody(const std::string& buffer);
-		bool setStatusCode(void);
+		int setStatusCode(void);
 		void directoryListing(DIR* directory, const std::string& dirName);
 
 	// Private member attributes
@@ -83,4 +83,5 @@ class Request {
 		std::string _query;
 		strMap _requestHeader;
 		bool _isDirectory;
+		bool _validRequest;
 };

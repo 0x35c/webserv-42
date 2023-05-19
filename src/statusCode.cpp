@@ -59,7 +59,7 @@ static std::string handleDirectoryCode(strMap& _requestHeader) {
 	}
 }
 
-bool Request::setStatusCode(void) {
+int Request::setStatusCode(void) {
 	std::ifstream file;
 
 	file.open(_requestHeader[HEAD].c_str());
@@ -69,15 +69,20 @@ bool Request::setStatusCode(void) {
 	if (!file && _method != POST) {
 		_statusCode = "404 Not Found";
 		_requestHeader[HEAD] = "src/404";
-		return (false);
+		return (400);
 	}
 	else if (_method == GET && _isDirectory == true)
 		_statusCode = handleDirectoryCode(_requestHeader);
+	else if (_method == POST && _validRequest == false) {
+		_statusCode = "400 Bad Request";
+		_requestHeader[HEAD] = "src/400";
+		_validRequest = true;
+	}
 	else if (_method == POST)
 		_statusCode = "201 Created";
 	else if (_method == DELETE)
 		_statusCode = "204 No Content";
 	else if (_method == GET )
 		_statusCode = "200 OK";
-	return (true);
+	return (200);
 }

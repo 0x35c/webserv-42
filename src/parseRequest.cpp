@@ -45,6 +45,10 @@ void Request::processLine(std::string line, int lineToken) {
 #if DEBUG
 				std::cout << str << "\n";
 #endif
+				if (line.find("HTTP/1.1") != std::string::npos)
+					_validRequest = true;
+				else
+					_validRequest = false;
 				if (_method == GET && str.find(root) == std::string::npos) {
 					if (str.length() == 0)
 						_requestHeader.insert(strPair(HEAD, root + "/index.html"));
@@ -54,6 +58,8 @@ void Request::processLine(std::string line, int lineToken) {
 				else if (_method == GET && str.find(root) != std::string::npos) {
 					_requestHeader.insert(strPair(HEAD, str));
 				}
+				else if (_method == POST && str == "/")
+					_requestHeader.insert(strPair(HEAD, "www/uploads/default"));
 				else if (_method == POST) {
 					str.erase(0, 1);
 					_requestHeader.insert(strPair(HEAD, str));
@@ -130,6 +136,9 @@ static void processBody(std::string& boundary, std::string& line, strMap& reques
 #endif
 		requestHeader[BODY].clear();
 		requestHeader[BODY] = tmp;
+	}
+	else {
+		std::cout << str << std::endl;
 	}
 }
 

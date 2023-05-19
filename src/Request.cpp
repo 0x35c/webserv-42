@@ -91,33 +91,25 @@ void Request::respondToGetRequest(void) {
 }
 
 void Request::respondToPostRequest(void) {
-	setStatusCode();
-	std::ofstream file(("www/uploads/" + _requestHeader[HEAD]).c_str());
+	int statusCode = setStatusCode();
 
 	std::ostringstream ss;
+	if (_requestHeader[HEAD] != "")
+		_statusCode = "302 Redirect";
 	ss << "HTTP/1.1 " << _statusCode << "\r\n";
 	ss << "Content-type: " << _requestHeader[ACCEPT] << "\r\n";
-	ss << "Location: www/uploads/" << _requestHeader[HEAD] << "\r\n";
+	if (_requestHeader[HEAD] != "") {
+		_statusCode = "302 Redirect";
+		ss << "Location: /done.html" << "\r\n";
+	}
 	ss << "Content-length: 0" << "\r\n\r\n";
 	send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
 
-	/* std::cout << _requestHeader[BODY]; */
-	/* std::string buffer(BUFFER_SIZE, 0); */
-	/* size_t length = 0; */
-	/* while (length < _requestHeader[BODY].length()) { */
-	/* 	if (length + BUFFER_SIZE < _requestHeader[BODY].length()) { */
-	/* 		buffer = _requestHeader[BODY].substr(length, length + BUFFER_SIZE); */
-	/* 		length += BUFFER_SIZE; */
-	/* 	} */
-	/* 	else */
-	/* 		buffer = _requestHeader[BODY].substr(length, _requestHeader[BODY].length()); */
-	/* 	file << buffer; */
-	/* 	buffer.clear(); */
-	/* } */
-
-	file << _requestHeader[BODY];
-	/* file.write(_requestHeader[BODY].c_str(), _requestHeader[BODY].length()); */
-	file.close();
+	if (statusCode == 200) {
+		std::ofstream file(("www/uploads/" + _requestHeader[HEAD]).c_str());
+		file << _requestHeader[BODY];
+		file.close();
+	}
 }
 
 void Request::respondToDeleteRequest(void) {

@@ -5,9 +5,14 @@ SRCS	:= main.cpp\
 		   Server.cpp\
 		   Request.cpp\
 		   parseRequest.cpp\
-		   utils.cpp\
 		   directoryListing.cpp\
-		   statusCode.cpp
+		   statusCode.cpp\
+		   parsing/attributeFunction.cpp\
+		   parsing/initializeStruct.cpp\
+		   parsing/parseConfFile.cpp\
+		   parsing/parseLine.cpp\
+		   parsing/utils.cpp\
+
 CC 		:= g++
 CFLAGS  := -Wall -Wextra -std=c++98 -g -MMD
 OBJS    := $(addprefix objs/, $(SRCS:.cpp=.o))

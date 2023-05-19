@@ -97,7 +97,8 @@ void Request::respondToPostRequest(void) {
 	std::ostringstream ss;
 	ss << "HTTP/1.1 " << _statusCode << "\r\n";
 	ss << "Content-type: " << _requestHeader[ACCEPT] << "\r\n";
-	ss << "Location: /" << "\r\n\r\n";
+	ss << "Location: www/uploads/" << _requestHeader[HEAD] << "\r\n";
+	ss << "Content-length: 0" << "\r\n\r\n";
 	send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
 
 	/* std::cout << _requestHeader[BODY]; */
@@ -148,12 +149,18 @@ bool Request::readRequest(std::string const &rawRequest) {
 	if (headerRead == false) {
 		_method = getMethod(rawRequest);
 		parseHeader(rawRequest);
-		if (_method == GET)
+		if (_method == GET) {
+			headerRead = false;
 			return (true);
+		}
 		headerRead = true;
 	}
-	else
-		return (parseBody(rawRequest));
+	else {
+		if (parseBody(rawRequest) == true) {
+			headerRead = false;
+			return (true);
+		}
+	}
 	return (false);
 }
 

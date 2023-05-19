@@ -54,8 +54,6 @@ void Request::processLine(std::string line, int lineToken) {
 				else if (_method == GET && str.find(root) != std::string::npos) {
 					_requestHeader.insert(strPair(HEAD, str));
 				}
-				else if (str == "/" && _method == POST)
-					_requestHeader.insert(strPair(HEAD, "server/default"));
 				else if (_method == POST) {
 					str.erase(0, 1);
 					_requestHeader.insert(strPair(HEAD, str));
@@ -66,6 +64,7 @@ void Request::processLine(std::string line, int lineToken) {
 			{
 				std::string tmp = getToken(line, ' ', 3);
 				_boundary = tmp.substr(tmp.find("=") + 1, tmp.length());
+				trimString(_boundary, "-\r");
 			}
 			break;
 		case ACCEPT:
@@ -105,7 +104,6 @@ static int getLineToken(std::string line) {
 static void processBody(std::string& boundary, std::string& line, strMap& requestHeader) {
 	int i = 1;
 	std::string str = getToken(line, '\n', i);
-	trimString(boundary, "-\r");
 	trimString(str, "-\r");
 	if (str == boundary) {
 		i++;
@@ -124,9 +122,12 @@ static void processBody(std::string& boundary, std::string& line, strMap& reques
 		std::string tmp = line.substr(line.find("\r\n\r\n"), line.length());
 		tmp.erase(0, 4);
 		tmp.erase(tmp.end() - 1);
-		size_t pos = tmp.rfind("\n");
+		size_t pos = tmp.rfind("\n------------------");
 		tmp.erase(pos, pos - tmp.length());
 		tmp.erase(tmp.end() - 1);
+#if DEBUG
+		std::cout << tmp;
+#endif
 		requestHeader[BODY].clear();
 		requestHeader[BODY] = tmp;
 	}
@@ -160,8 +161,8 @@ void Request::parseHeader(const std::string& buffer) {
 }
 
 bool Request::parseBody(const std::string& buffer) {
-	static long count = 0;
-	std::cout << count++ << std::endl;
+	/* static long count = 0; */
+	/* std::cout << count++ << std::endl; */
 	/* size_t sizeBody = 0; */
 	_requestHeader[BODY] += buffer;
 	/* size_t start = _requestHeader[BODY].find("\r\n\r\n"); */
@@ -184,11 +185,13 @@ bool Request::parseBody(const std::string& buffer) {
 	/* std::cout << "End: " << end << std::endl; */
 	/* std::cout << "Content Length: " << _requestHeader[CONTENT_LENGTH] << std::endl;; */
 	/* std::cout << "Size body: " << sizeBody << std::endl; */
-	size_t pos = buffer.find("-----------------------------");
-	if (pos != std::string::npos && pos != 0) {
+	size_t pos = buffer.find(_boundary);
+	if (pos != std::string::npos && pos > _boundary.length() + 30) {
 		/* std::cout << buffer << std::endl; */
 		/* std::cout << buffer; */
+#if DEBUG
 		std::cout << "Body finished" << std::endl;
+#endif
 		return (true);
 	}
 	/* if (sizeBody == (size_t)std::atol(_requestHeader[CONTENT_LENGTH].c_str())) { */

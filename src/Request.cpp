@@ -136,7 +136,12 @@ bool Request::readRequest(std::string const &rawRequest) {
 	if (headerRead == false) {
 		_method = getMethod(rawRequest);
 		parseHeader(rawRequest);
-		if (_method == GET) {
+		std::string tmpHeader = rawRequest.substr(0, rawRequest.find("\r\n\r\n"));
+		std::string tmpBodyHeader = rawRequest.substr(rawRequest.find("\r\n\r\n") + 4, std::string::npos);
+		tmpBodyHeader = tmpBodyHeader.substr(0, tmpBodyHeader.find("\r\n\r\n"));
+		std::string tmpBoundary = tmpBodyHeader.substr(0, tmpBodyHeader.find("\r"));
+		long contentLength = std::atol(_requestHeader[CONTENT_LENGTH].c_str()) + tmpHeader.length() + 4 + tmpBodyHeader.length() + tmpBoundary.length() + 2;
+		if (_method == GET || (_method == POST && contentLength < BUFFER_SIZE)) {
 			headerRead = false;
 			return (true);
 		}

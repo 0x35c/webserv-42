@@ -111,9 +111,10 @@ bool Server::_processRequest(int clientFd, Request &request)
 #if DEBUG
 	std::cout << rc << " bytes read\n";
 #endif
-
+	
 	if (request.readRequest(header_buffer))
 	{
+		std::cout << "here\n";
 		request.respondToRequest();
 #if DEBUG
 		std::cout << "response sent\n";

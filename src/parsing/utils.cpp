@@ -3,8 +3,6 @@
 #include <dirent.h>
 #include <unistd.h>
 
-#define WHITESPACE " \n\r\t\f\v"
-
 const std::string ParsingError(std::string error) throw()
 {
 	return ("parsing error: " + error + "\n");
@@ -52,6 +50,18 @@ bool isValidPath(const std::string string)
 {
 	if (access(string.c_str(), 0) == 0)
 		return (true);
+	return (false);
+}
+
+bool isValidPathDir(const std::string string)
+{
+	DIR *tmp;
+	tmp = opendir(string.c_str());
+	if (tmp)
+	{
+		closedir(tmp);
+		return (true);
+	}
 	return (false);
 }
 

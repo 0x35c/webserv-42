@@ -3,6 +3,7 @@
 #include <cstdlib>
 
 #include "Server.hpp"
+#include "parsing/parsing.hpp"
 
 void signal_handler(int signum)
 {
@@ -10,14 +11,30 @@ void signal_handler(int signum)
 	throw std::runtime_error("SIGINT received");
 }
 
-int	main(void)
+int	main(int argc, char **argv)
 {
 	signal(SIGINT, signal_handler);
-
+	
+	if (argc != 2)
+	{
+		std::cout << "an argument is needed\n";
+		return EXIT_FAILURE;
+	}
+	std::vector<t_server> serverConfigFile;
+	try
+	{
+		serverConfigFile = Parsing::parseConfFile(argv[1]);
+	}
+	catch(const std::string exception)
+	{
+		std::cerr << exception;
+		return EXIT_FAILURE;
+	}
 	Server server;
 	try
 	{
-		server.addAddress("0.0.0.0", 8080);
+		for (size_t i = 0; i < serverConfigFile.size(); i++)
+			server.addAddress(serverConfigFile[i].host, serverConfigFile[i].port);
 		server.start();
 	}
 	catch(const std::exception& e)

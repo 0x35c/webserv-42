@@ -23,7 +23,7 @@
 
 class Server {
 	public:
-		Server(void);
+		Server();
 		~Server();
 
 		void start(void);

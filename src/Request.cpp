@@ -1,6 +1,9 @@
 #include "Request.hpp"
 #include <cstdlib>
 #include <iostream>
+#include <sys/types.h>
+#include <sys/wait.h>
+extern char ** g_env;
 
 Request::Request(void)
 	: _clientfd(-1), _method(-1)
@@ -67,21 +70,65 @@ void Request::respondToGetRequest(void) {
 	DIR* directory = opendir(_requestHeader[HEAD].c_str());
 	_isDirectory = false;
 	if (directory == NULL) {
-		setStatusCode();
-		std::ifstream file(_requestHeader[HEAD].c_str(), std::ios::in | std::ios::binary);
+		std::string fileName = _requestHeader[HEAD].substr(0, _requestHeader[HEAD].find("?"));
+		if (fileName.substr(fileName.length() - 3) == ".py")
+		{
+			int fds[2];
+			pipe(fds);
+			int pid = fork();
+			if (pid == 0)
+			{
+				dup2(fds[1], 1);
+				close(fds[0]);
+				close(fds[1]);
+				std::string querys = _requestHeader[HEAD].substr(_requestHeader[HEAD].find("?") + 1, std::string::npos);
+				char *args[4] = {(char *)"/usr/bin/python3",(char *)(fileName.c_str()), (char *)(querys.c_str()),NULL};
+				execve("/usr/bin/python3", args, g_env);
+				exit(0);
+			}
+			else if (pid > 0)
+			{
+				waitpid(pid, NULL, 0);
+				dup2(fds[0], 0);
+				close(fds[0]);
+				close(fds[1]);
+				setStatusCode();
+				std::ostringstream tmp;
+				std::string line;
+				int fileSize = 0;
+				while (std::getline(std::cin, line))
+				{
+					tmp << line << std::endl;
+					fileSize += line.length() + 1;
+				}
 
-		file.seekg(0, std::ios::end);
-		std::streampos fileSize = file.tellg();
-		file.seekg(0, std::ios::beg);
+				std::ostringstream ss;
+				ss << "HTTP/1.1 " << _statusCode << "\r\n";
+				ss << "Content-type: text/html\r\n";
+				ss << "Content-Length: " << fileSize << "\r\n\r\n";
+				ss << tmp.str();
+			
+				send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
+			}
+		}
+		else
+		{
+			setStatusCode();
+			std::ifstream file(fileName.c_str(), std::ios::in | std::ios::binary);
 
-		std::ostringstream ss;
-		ss << "HTTP/1.1 " << _statusCode << "\r\n";
-		ss << "Content-type: " << _requestHeader[ACCEPT] << "\r\n";
-		ss << "Content-Length: " << fileSize << "\r\n\r\n";
-		ss << file.rdbuf();
+			file.seekg(0, std::ios::end);
+			std::streampos fileSize = file.tellg();
+			file.seekg(0, std::ios::beg);
 
-		send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
-		file.close();
+			std::ostringstream ss;
+			ss << "HTTP/1.1 " << _statusCode << "\r\n";
+			ss << "Content-type: " << _requestHeader[ACCEPT] << "\r\n";
+			ss << "Content-Length: " << fileSize << "\r\n\r\n";
+			ss << file.rdbuf();
+
+			send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
+			file.close();
+		}
 	}
 	else {
 		_isDirectory = true;

@@ -14,8 +14,8 @@
 typedef std::map<int, std::string> strMap;
 typedef std::pair<int, std::string> strPair;
 
-#define BUFFER_SIZE 256*256
-#define DEBUG 0
+#define BUFFER_SIZE 8192
+#define DEBUG 1
 
 enum methods {
 	ERROR,

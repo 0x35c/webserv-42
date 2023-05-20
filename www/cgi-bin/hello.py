@@ -3,6 +3,7 @@ import cgi
 
 cgitb.enable()
 
+print("<!DOCTYPE html>\n")
 print("<html>\n")
 print("<body>\n")
 print("<h1>Hello there!</h1>\n")

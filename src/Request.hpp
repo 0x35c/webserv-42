@@ -65,7 +65,9 @@ class Request {
 	// Private member functions
 	private:
 		void respondToGetRequest(void);
+		void respondToGetCGI(std::string fileName);
 		void respondToPostRequest(void);
+		void respondToPostCGI(void);
 		void respondToDeleteRequest(void);
 		void errorOnRequest(void);
 		void processLine(std::string line, int lineToken);

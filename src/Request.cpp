@@ -61,6 +61,56 @@ static void getQuery(std::string& query, const std::string& name) {
 		query = name.substr(delimiter + 1);
 }
 
+void Request::respondToGetCGI(std::string fileName)
+{
+	/* TO-DO LIST
+	 * check if the CGI got and infinite loop
+	 * change the envp variables of execve to the good one
+	 * check return of functions (pipe, dup2, close, read, send)
+	*/
+	int fds[2][2];
+	pipe(fds[0]);
+	pipe(fds[1]);
+	int pid = fork();
+	if (pid == 0)
+	{
+		dup2(fds[0][0], 0);
+		dup2(fds[1][1], 1);
+		close(fds[0][0]);
+		close(fds[0][1]);
+		close(fds[1][0]);
+		close(fds[1][1]);
+		std::string querys = _requestHeader[HEAD].substr(_requestHeader[HEAD].find("?") + 1, std::string::npos);
+		char *args[4] = {(char *)"/usr/bin/python3", (char *)(fileName.c_str()),
+						(char *)(querys.c_str()),NULL};
+		execve("/usr/bin/python3", args, g_env);
+		exit(0);
+	}
+	else if (pid > 0)
+	{
+		waitpid(pid, NULL, 0);
+		close(fds[0][0]);
+		close(fds[0][1]);
+		close(fds[1][1]);
+		setStatusCode();
+		std::string line;
+		
+		char buffer[BUFFER_SIZE] = {0};
+		int fileSize = read(fds[1][0], buffer, BUFFER_SIZE);
+		close(fds[1][0]);
+
+		std::ostringstream ss;
+		ss << "HTTP/1.1 200\r\n";
+		ss << "Content-type: text/html\r\n";
+		ss << "Content-Length: " << fileSize << "\r\n\r\n";
+		ss << buffer;
+	
+		send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
+		ss.str("");
+		ss.clear();
+	}
+}
+
 void Request::respondToGetRequest(void) {
 	editName(_requestHeader[HEAD]);
 	getQuery(_query, _requestHeader[HEAD]);
@@ -72,50 +122,7 @@ void Request::respondToGetRequest(void) {
 	if (directory == NULL) {
 		std::string fileName = _requestHeader[HEAD].substr(0, _requestHeader[HEAD].find("?"));
 		if (fileName.substr(fileName.length() - 3) == ".py")
-		{
-			int fds[2][2];
-			pipe(fds[0]);
-			pipe(fds[1]);
-			int pid = fork();
-			if (pid == 0)
-			{
-				dup2(fds[0][0], 0);
-				dup2(fds[1][1], 1);
-				close(fds[0][0]);
-				close(fds[0][1]);
-				close(fds[1][0]);
-				close(fds[1][1]);
-				std::string querys = _requestHeader[HEAD].substr(_requestHeader[HEAD].find("?") + 1, std::string::npos);
-				char *args[4] = {(char *)"/usr/bin/python3",(char *)(fileName.c_str()), (char *)(querys.c_str()),NULL};
-				execve("/usr/bin/python3", args, g_env);
-				exit(0);
-			}
-			else if (pid > 0)
-			{
-				waitpid(pid, NULL, 0);
-				close(fds[0][0]);
-				close(fds[0][1]);
-				close(fds[1][1]);
-				setStatusCode();
-				std::string line;
-				int fileSize = 0;
-				
-				char buffer[BUFFER_SIZE] = {0};
-				int rc = read(fds[1][0], buffer, BUFFER_SIZE);
-				fileSize = rc;
-				close(fds[1][0]);
-
-				std::ostringstream ss;
-				ss << "HTTP/1.1 200\r\n";
-				ss << "Content-type: text/html\r\n";
-				ss << "Content-Length: " << fileSize << "\r\n\r\n";
-				ss << buffer;
-			
-				send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
-				ss.str("");
-				ss.clear();
-			}
-		}
+			respondToGetCGI(fileName);
 		else
 		{
 			setStatusCode();
@@ -142,6 +149,11 @@ void Request::respondToGetRequest(void) {
 		setStatusCode();
 		directoryListing(directory, _requestHeader[HEAD]);
 	}
+}
+
+void Request::respondToPostCGI(void)
+{
+
 }
 
 void Request::respondToPostRequest(void) {

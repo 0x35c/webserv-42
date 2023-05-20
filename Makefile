@@ -20,7 +20,7 @@ OBJS    := $(addprefix objs/, $(SRCS:.cpp=.o))
 all: $(NAME)
 
 run: all
-	./${NAME}
+	./${NAME} ConfigFiles/easy.conf
 
 $(NAME): $(OBJS)
 	$(CC) -o $(NAME) $(OBJS)

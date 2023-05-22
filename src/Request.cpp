@@ -30,19 +30,16 @@ Request&	Request::operator=(const Request& other) {
 }
 
 static void editName(std::string& name) {
+	std::string subName = name;
 	while (true) {
-		char* name_c = (char *)name.c_str();
-		size_t len;
-		if (name.find("%") != std::string::npos) {
-			for (size_t i = 0; name_c[i]; i++) {
-				if (name_c[i] == '%') {
-					name_c = &(name_c[i + 1]);
-					break ;
-				}
-			}
+		size_t pos = subName.find("%");
+		if (pos != std::string::npos) {
+			std::string tmp = subName.substr(pos + 1, std::string::npos);
+			char* name_c = (char *)tmp.c_str();
+			name_c[2] = '\0';
 			long c = std::strtol(name_c, NULL, 16);
-			for (len = 0; std::isdigit(name_c[len]); len++);
-			name.replace(name.find("%"), len + 1, (const char*)&c);
+			name.replace(name.find("%"), 3, (const char*)&c);
+			subName = tmp;
 		}
 		else if (name.find("+") != std::string::npos) {
 			name.replace(name.find("+"), 1, " ");
@@ -98,10 +95,8 @@ void Request::respondToPostRequest(void) {
 		_statusCode = "302 Redirect";
 	ss << "HTTP/1.1 " << _statusCode << "\r\n";
 	ss << "Content-type: " << _requestHeader[ACCEPT] << "\r\n";
-	if (_requestHeader[HEAD] != "") {
-		_statusCode = "302 Redirect";
+	if (_statusCode == "302 Redirect")
 		ss << "Location: /done.html" << "\r\n";
-	}
 	ss << "Content-length: 0" << "\r\n\r\n";
 	send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
 
@@ -141,7 +136,12 @@ bool Request::readRequest(std::string const &rawRequest) {
 	if (headerRead == false) {
 		_method = getMethod(rawRequest);
 		parseHeader(rawRequest);
-		if (_method == GET) {
+		std::string tmpHeader = rawRequest.substr(0, rawRequest.find("\r\n\r\n"));
+		std::string tmpBodyHeader = rawRequest.substr(rawRequest.find("\r\n\r\n") + 4, std::string::npos);
+		tmpBodyHeader = tmpBodyHeader.substr(0, tmpBodyHeader.find("\r\n\r\n"));
+		std::string tmpBoundary = tmpBodyHeader.substr(0, tmpBodyHeader.find("\r"));
+		long contentLength = std::atol(_requestHeader[CONTENT_LENGTH].c_str()) + tmpHeader.length() + 4 + tmpBodyHeader.length() + tmpBoundary.length() + 2;
+		if (_method == GET || (_method == POST && contentLength < BUFFER_SIZE)) {
 			headerRead = false;
 			return (true);
 		}

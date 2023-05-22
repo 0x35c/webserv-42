@@ -87,18 +87,17 @@ void Request::respondToGetCGI(std::string fileName)
 	 * change the envp variables of execve to the good one
 	 * check return of functions (pipe, dup2, close, read, send, kill)
 	*/
-	int fds[2][2];
-	pipe(fds[0]);
-	pipe(fds[1]);
+	pipe(_cgi.fds[0]);
+	pipe(_cgi.fds[1]);
 	int pid = fork();
 	if (pid == 0)
 	{
-		dup2(fds[0][0], 0);
-		dup2(fds[1][1], 1);
-		close(fds[0][0]);
-		close(fds[0][1]);
-		close(fds[1][0]);
-		close(fds[1][1]);
+		dup2(_cgi.fds[0][0], 0);
+		dup2(_cgi.fds[1][1], 1);
+		close(_cgi.fds[0][0]);
+		close(_cgi.fds[0][1]);
+		close(_cgi.fds[1][0]);
+		close(_cgi.fds[1][1]);
 
 		std::string querys = _requestHeader[HEAD].substr(_requestHeader[HEAD].find("?") + 1, std::string::npos);
 		char *args[4] = {(char *)"/usr/bin/python3", (char *)(fileName.c_str()),
@@ -109,46 +108,11 @@ void Request::respondToGetCGI(std::string fileName)
 	}
 	else if (pid > 0)
 	{
-		bool forkFinishedProperly = false;
-		std::time_t begin_time = std::time(NULL);
-		std::time_t actual_time = std::time(NULL);
-		while ((actual_time - begin_time) < TIMEOUT_CGI)
-		{
-			if (waitpid(pid, NULL, WNOHANG) != 0)
-			{
-				forkFinishedProperly = true;
-				break ;
-			}
-			actual_time = std::time(NULL);
-		}
-		close(fds[0][0]);
-		close(fds[0][1]);
-		close(fds[1][1]);
-		std::ostringstream ss;
-		setStatusCode();
-		if (forkFinishedProperly)
-		{
-			char buffer[BUFFER_SIZE] = {0};
-			int fileSize = read(fds[1][0], buffer, BUFFER_SIZE);
-
-			ss << "HTTP/1.1 200\r\n";
-			ss << "Content-type: text/html\r\n";
-			ss << "Content-Length: " << fileSize << "\r\n\r\n";
-			ss << buffer;
-		}
-		else
-		{
-			kill(pid, SIGKILL);	
-			std::string InfiniteLoopHTML = "<html><body><h1>Infinite loop in CGI</h1></body></html>";
-			ss << "HTTP/1.1 200\r\n";
-			ss << "Content-type: text/html\r\n";
-			ss << "Content-Length: " << InfiniteLoopHTML.size() << "\r\n\r\n";
-			ss << InfiniteLoopHTML;
-		}
-		close(fds[1][0]);
-		send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
-		ss.str("");
-		ss.clear();
+		_cgi.pid = pid;
+		_cgi.begin_time = std::time(NULL);
+		close(_cgi.fds[0][0]);
+		close(_cgi.fds[0][1]);
+		close(_cgi.fds[1][1]);
 	}
 }
 
@@ -160,14 +124,17 @@ void Request::respondToGetRequest(void) {
 #endif
 	DIR* directory = opendir(_requestHeader[HEAD].c_str());
 	_isDirectory = false;
+	_cgi.inCGI = false;
 	if (directory == NULL) {
 		std::string fileName = _requestHeader[HEAD].substr(0, _requestHeader[HEAD].find("?"));
-		if (fileName.substr(fileName.length() - 3) == ".py")
+		if (fileName.substr(fileName.length() - 3) == ".py") {
+			_cgi.inCGI = true;
 			respondToGetCGI(fileName);
+		}
 		else
 		{
 			setStatusCode();
-			std::ifstream file(fileName.c_str(), std::ios::in | std::ios::binary);
+			std::ifstream file(_requestHeader[HEAD].c_str(), std::ios::in | std::ios::binary);
 
 			file.seekg(0, std::ios::end);
 			std::streampos fileSize = file.tellg();
@@ -270,5 +237,9 @@ Request::~Request(void){
 }
 
 int Request::getClientfd(void) const {
-	return _clientfd;
+	return (_clientfd);
+}
+
+t_cgi & Request::getCGI(void) {
+	return (_cgi);
 }

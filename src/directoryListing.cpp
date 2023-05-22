@@ -1,36 +1,52 @@
 #include "Request.hpp"
 
-void Request::directoryListing(DIR* directory, const std::string& dirName) {
-	std::string tmpHTML = "<!DOCTYPE html>\
-	<html lang=\"en\">\
-	<head>\
-		<meta charset=\"utf-8\">\
-	</head>\
-	<body style=\"background-color: rgb(181, 200, 95);\
-	font-family: \"sans-serif\";\">\
-	<h1>You are on " + dirName + " directory</h1>\
-	<h1><a href=\"/index.html\">HOME</a></br></h1>\
-	<p>\
-	<ul>";
-	(void)dirName;
+static void multipleRepace(std::string &str, const std::string& from, const std::string& to) {
+	size_t start_pos = 0;
+	while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
+		str.replace(start_pos, from.length(), to);
+		start_pos += to.length();
+	}
+}
 
+static void addElement(std::string &list, std::string element)
+{
+	list += "<li><span><a href=\"";
+	list += element;
+	list += "\">";
+	list += element;
+	list += "</a></span></li>\n";
+}
+
+void Request::directoryListing(DIR* directory, const std::string& dirName) {
+	std::string tmpHTML;
+	std::ifstream htmlFile("www/directoryListing.html");
+	if (htmlFile.is_open()) {
+		std::string line;
+		while (getline(htmlFile, line)) {
+			tmpHTML += line + "\n";
+		}
+		htmlFile.close();
+	}
+	else {
+		std::cerr << "Error: directoryListing.html not found" << std::endl;
+		tmpHTML = "<ul><!--DIRLIST--></ul>";
+	}
+
+	std::string dirList;
 	struct dirent* file;
-	while (true) {	
+	addElement(dirList, "/");
+	addElement(dirList, "..");
+	while (true) {
 		file = readdir(directory);
 		if (file == NULL)
 			break;
 		if (file->d_name[0] == '.')
 			continue ;
-		tmpHTML += "<li><span><a href=\"";
-		tmpHTML += file->d_name;
-		tmpHTML += "\">";
-		tmpHTML += file->d_name;
-		tmpHTML += "</a></span></li>\n";
+		addElement(dirList, file->d_name);
 	}
-	tmpHTML += "</ul>\
-	</p>\
-	</body>\
-	</html>";
+
+	multipleRepace(tmpHTML, "<!--DIRLIST-->", dirList);
+	multipleRepace(tmpHTML, "<!--DIRNAME-->", dirName);
 	size_t fileSize = tmpHTML.length();
 
 #if DEBUG

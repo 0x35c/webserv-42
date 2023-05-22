@@ -1,6 +1,5 @@
 #include <cstdlib>
 #include <algorithm>
-#include <fcntl.h>
 
 #include "Server.hpp"
 
@@ -20,13 +19,6 @@ void Server::addAddress(std::string const &address, int port)
 	int fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0)
 		throw ServerException();
-	
-	/*
-	int flag = fcntl(fd, F_GETFL, 0);
-	flag |= O_NONBLOCK;
-	fcntl(fd, F_SETFL, flag);
-	*/
-
 	int option = 1;
 	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(int)) < 0)
 		throw ServerException();
@@ -100,7 +92,6 @@ void Server::_acceptConnection(int socketFd, sockaddr_in *address)
 		return ;
 	}
 
-	FD_SET(fd, &_readSet);
 	_requests[fd] = Request(fd);
 #if DEBUG
 	std::cout << "accepted connection\n";

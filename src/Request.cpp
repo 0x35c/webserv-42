@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 #include <ctime>
 
 extern char ** g_env;
@@ -98,6 +99,7 @@ void Request::respondToGetCGI(std::string fileName)
 		close(fds[0][1]);
 		close(fds[1][0]);
 		close(fds[1][1]);
+
 		std::string querys = _requestHeader[HEAD].substr(_requestHeader[HEAD].find("?") + 1, std::string::npos);
 		char *args[4] = {(char *)"/usr/bin/python3", (char *)(fileName.c_str()),
 						(char *)(querys.c_str()),NULL};

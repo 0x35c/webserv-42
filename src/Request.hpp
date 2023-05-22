@@ -83,6 +83,7 @@ class Request {
 	private:
 		int	_clientfd;
 		int _method;
+		fd_set _readSet;
 		std::string _statusCode;
 		std::string _boundary;
 		std::string _query;

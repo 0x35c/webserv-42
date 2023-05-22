@@ -17,15 +17,13 @@ int	main(int argc, char **argv, char **envp)
 	signal(SIGINT, signal_handler);
 	
 	g_env =  envp;
-	if (argc != 2)
-	{
-		std::cout << "an argument is needed\n";
-		return EXIT_FAILURE;
-	}
 	std::vector<t_server> serverConfigFile;
 	try
 	{
-		serverConfigFile = Parsing::parseConfFile(argv[1]);
+		if (argc == 2)
+			serverConfigFile = Parsing::parseConfFile(argv[1]);
+		else
+			serverConfigFile = Parsing::parseConfFile("conf/easy.conf");
 	}
 	catch(const std::string exception)
 	{

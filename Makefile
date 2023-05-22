@@ -23,7 +23,7 @@ run: all
 	./${NAME} conf/easy.conf
 
 vg: all
-	valgrind --track-fds=yes --show-leak-kinds=all --leak-check=full ./${NAME} ConfigFiles/easy.conf
+	valgrind --track-fds=yes --show-leak-kinds=all --leak-check=full ./${NAME} conf/easy.conf
 
 $(NAME): $(OBJS)
 	$(CC) -o $(NAME) $(OBJS)

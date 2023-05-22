@@ -10,13 +10,13 @@
 #include <iostream>
 #include <arpa/inet.h>
 #include <cstdlib>
+#include <vector>
 
 typedef std::map<int, std::string> strMap;
 typedef std::pair<int, std::string> strPair;
 
 #define BUFFER_SIZE 8192
 #define DEBUG 0
-#define TIMEOUT_CGI 3
 
 enum attributes {
 	BODY,
@@ -42,6 +42,13 @@ enum attributes {
 	CACHE_CONTROL
 };
 
+typedef struct s_cgi {
+	bool	inCGI;
+	int		pid;
+	int		fds[2][2];
+	time_t	begin_time;
+} t_cgi;
+
 class Request {
 	public:
 		Request(void);
@@ -55,6 +62,7 @@ class Request {
 		void respondToRequest(void);
 
 		int getClientfd(void) const;
+		t_cgi & getCGI(void);
 
 	// Private member functions
 	private:
@@ -74,7 +82,7 @@ class Request {
 	// Private member attributes
 	private:
 		int	_clientfd;
-		std::string _method;
+		std::string  _method;
 		std::string _statusCode;
 		std::string _boundary;
 		std::string _query;
@@ -82,4 +90,5 @@ class Request {
 		bool _isDirectory;
 		bool _validRequest;
 		std::map<std::string, std::string> _cgiEnv;
+		t_cgi _cgi;
 };

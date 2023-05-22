@@ -1,7 +1,7 @@
 #include <cstdlib>
 #include <algorithm>
-#include <fcntl.h>
-
+#include <ctime>
+#include <sys/wait.h>
 #include "Server.hpp"
 
 Server::Server(void)
@@ -20,13 +20,6 @@ void Server::addAddress(std::string const &address, int port)
 	int fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0)
 		throw ServerException();
-	
-	/*
-	int flag = fcntl(fd, F_GETFL, 0);
-	flag |= O_NONBLOCK;
-	fcntl(fd, F_SETFL, flag);
-	*/
-
 	int option = 1;
 	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(int)) < 0)
 		throw ServerException();
@@ -69,15 +62,58 @@ void Server::start(void)
 	while (true)
 	{
 		readSet = _readSet;
-		if (select(FD_SETSIZE + 1, &readSet, NULL, NULL, NULL) < 0)
+		struct timeval timeout;
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 10000;
+		int rv = select(FD_SETSIZE + 1, &readSet, NULL, NULL, &timeout);
+		if (rv < 0)
 			throw ServerException();
+		for (requestMap::iterator it = _requests.begin(); it != _requests.end(); )
+		{
+			if (it->second.getCGI().inCGI == true)
+			{
+				std::ostringstream ss;
+				bool stopCGI = false;
+				if (std::time(NULL) - it->second.getCGI().begin_time > TIMEOUT_CGI)
+				{
+					stopCGI = true;
+					kill(it->second.getCGI().pid, SIGKILL);
+					std::string InfiniteLoopHTML = "<html><body><h1>Infinite loop in CGI</h1></body></html>";
+					ss << "HTTP/1.1 508 Loop Detected\r\n";
+					ss << "Content-type: text/html\r\n";
+					ss << "Content-Length: " << InfiniteLoopHTML.size() << "\r\n\r\n";
+					ss << InfiniteLoopHTML;
+				}
+				else if (waitpid(it->second.getCGI().pid, NULL, WNOHANG) > 0)
+				{
+					stopCGI = true;
+					char buffer[BUFFER_SIZE] = {0};
+					int fileSize = read(it->second.getCGI().fds[1][0], buffer, BUFFER_SIZE);
+					ss << "HTTP/1.1 200\r\n";
+					ss << "Content-type: text/html\r\n";
+					ss << "Content-Length: " << fileSize << "\r\n\r\n";
+					ss << buffer;
+				}
+				if (stopCGI)
+				{
+					close(it->second.getCGI().fds[1][0]);
+					it->second.getCGI().inCGI = false;
+					send(it->second.getClientfd(), ss.str().c_str(), ss.str().size(), 0);
+					ss.str("");
+					ss.clear();
+				}
+			}
+			it++;
+		}
+		if (rv == 0)
+			continue ;
 		for (socketMap::iterator it = _sockets.begin(); it != _sockets.end(); it++) 
 			if (FD_ISSET(it->first, &readSet))
 				_acceptConnection(it->first, &it->second);
 
 		for (requestMap::iterator it = _requests.begin(); it != _requests.end(); )
 		{
-			if (FD_ISSET(it->first, &readSet))
+			if (FD_ISSET(it->first, &readSet) && it->second.getCGI().inCGI == false)
 			{
 				if (_processRequest(it->first, it->second))
 				{
@@ -99,9 +135,9 @@ void Server::_acceptConnection(int socketFd, sockaddr_in *address)
 			throw ServerException();
 		return ;
 	}
-
 	FD_SET(fd, &_readSet);
 	_requests[fd] = Request(fd);
+	_requests[fd].getCGI().inCGI = false;
 #if DEBUG
 	std::cout << "accepted connection\n";
 #endif

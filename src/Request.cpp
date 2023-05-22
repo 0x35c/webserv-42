@@ -1,10 +1,11 @@
 #include "Request.hpp"
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 #include <ctime>
 
 
-static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv);
+//static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv);
 
 Request::Request(void)
 	: _clientfd(-1), _method("NTM")
@@ -72,6 +73,7 @@ void Request::initializeEnvpCGI(void) {
 	_cgiEnv["HTTP_USER_AGENT"] = _requestHeader[USER_AGENT];
 }
 
+/*
 static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv) {
 	char **arrayEnvpVariable =  new char *[_cgiEnv.size()];
 	int i = 0;
@@ -84,7 +86,7 @@ static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv) {
 	}
 	return (arrayEnvpVariable);
 }
-
+*/
 // Function is working but we might need to change it 
 // to make the read() syscall go through select()
 void Request::respondToGetCGI(std::string fileName) {
@@ -96,63 +98,33 @@ void Request::respondToGetCGI(std::string fileName) {
 	 * change the envp variables of execve to the good one
 	 * check return of functions (pipe, dup2, close, read, send, kill)
 	*/
-	int fds[2][2];
-	pipe(fds[0]);
-	pipe(fds[1]);
+	pipe(_cgi.fds[0]);
+	pipe(_cgi.fds[1]);
 	int pid = fork();
-	if (pid == 0) {
-		dup2(fds[0][0], 0);
-		dup2(fds[1][1], 1);
-		close(fds[0][0]);
-		close(fds[0][1]);
-		close(fds[1][0]);
-		close(fds[1][1]);
+	if (pid == 0)
+	{
+		dup2(_cgi.fds[0][0], 0);
+		dup2(_cgi.fds[1][1], 1);
+		close(_cgi.fds[0][0]);
+		close(_cgi.fds[0][1]);
+		close(_cgi.fds[1][0]);
+		close(_cgi.fds[1][1]);
+
 		std::string querys = _requestHeader[HEAD].substr(_requestHeader[HEAD].find("?") + 1, std::string::npos);
 		_cgiEnv["QUERY_STRING"] = querys;
 		char *args[4] = {(char *)"/usr/bin/python3", (char *)(fileName.c_str()),
 						(char *)(querys.c_str()),NULL};
-		//execve("/usr/bin/python3", args, GetEnvpInArray());
-		execve("/usr/bin/python3", args, getEnvpInArray(_cgiEnv));
+		//execve("/usr/bin/python3", args, getEnvpInArray(_cgiEnv));
+		execve("/usr/bin/python3", args, NULL);
 		exit(0);
 	}
-	else if (pid > 0) {
-		bool forkFinishedProperly = false;
-		std::time_t begin_time = std::time(NULL);
-		std::time_t actual_time = std::time(NULL);
-		while ((actual_time - begin_time) < TIMEOUT_CGI)
-		{
-			if (waitpid(pid, NULL, WNOHANG) != 0) {
-				forkFinishedProperly = true;
-				break ;
-			}
-			actual_time = std::time(NULL);
-		}
-		close(fds[0][0]);
-		close(fds[0][1]);
-		close(fds[1][1]);
-		std::ostringstream ss;
-		setStatusCode();
-		if (forkFinishedProperly) {
-			char buffer[BUFFER_SIZE] = {0};
-			int fileSize = read(fds[1][0], buffer, BUFFER_SIZE);
-
-			ss << "HTTP/1.1 200\r\n";
-			ss << "Content-type: text/html\r\n";
-			ss << "Content-Length: " << fileSize << "\r\n\r\n";
-			ss << buffer;
-		}
-		else {
-			kill(pid, SIGKILL);	
-			std::string InfiniteLoopHTML = "<html><body><h1>Infinite loop in CGI</h1></body></html>";
-			ss << "HTTP/1.1 200\r\n";
-			ss << "Content-type: text/html\r\n";
-			ss << "Content-Length: " << InfiniteLoopHTML.size() << "\r\n\r\n";
-			ss << InfiniteLoopHTML;
-		}
-		close(fds[1][0]);
-		send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
-		ss.str("");
-		ss.clear();
+	else if (pid > 0)
+	{
+		_cgi.pid = pid;
+		_cgi.begin_time = std::time(NULL);
+		close(_cgi.fds[0][0]);
+		close(_cgi.fds[0][1]);
+		close(_cgi.fds[1][1]);
 	}
 }
 
@@ -165,11 +137,15 @@ void Request::respondToGetRequest(void) {
 #endif
 	DIR* directory = opendir(_requestHeader[HEAD].c_str());
 	_isDirectory = false;
+	_cgi.inCGI = false;
 	if (directory == NULL) {
 		std::string fileName = _requestHeader[HEAD].substr(0, _requestHeader[HEAD].find("?"));
-		if (fileName.substr(fileName.length() - 3) == ".py")
+		if (fileName.substr(fileName.length() - 3) == ".py") {
+			_cgi.inCGI = true;
 			respondToGetCGI(fileName);
-		else {
+		}
+		else
+		{
 			setStatusCode();
 			std::ifstream file(_requestHeader[HEAD].c_str(), std::ios::in | std::ios::binary);
 
@@ -197,7 +173,7 @@ void Request::respondToGetRequest(void) {
 }
 
 void Request::respondToPostCGI(std::string fileName) {
-
+	(void)fileName;
 }
 
 void Request::respondToPostRequest(void) {
@@ -273,5 +249,9 @@ Request::~Request(void) {
 }
 
 int Request::getClientfd(void) const {
-	return _clientfd;
+	return (_clientfd);
+}
+
+t_cgi & Request::getCGI(void) {
+	return (_cgi);
 }

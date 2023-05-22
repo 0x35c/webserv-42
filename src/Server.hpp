@@ -19,6 +19,7 @@
 
 #include "Request.hpp"
 
+#define TIMEOUT_CGI 3
 #define LISTEN_BACKLOG 128
 
 class Server {

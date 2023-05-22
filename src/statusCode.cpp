@@ -66,23 +66,23 @@ int Request::setStatusCode(void) {
 #if DEBUG
 	std::cout << _requestHeader[HEAD] << std::endl;
 #endif
-	if (!file && _method != POST) {
+	if (!file && _method != "POST") {
 		_statusCode = "404 Not Found";
 		_requestHeader[HEAD] = "src/404";
 		return (400);
 	}
-	else if (_method == GET && _isDirectory == true)
+	else if (_method == "GET" && _isDirectory == true)
 		_statusCode = handleDirectoryCode(_requestHeader);
-	else if (_method == POST && _validRequest == false) {
+	else if (_method == "POST" && _validRequest == false) {
 		_statusCode = "400 Bad Request";
 		_requestHeader[HEAD] = "src/400";
 		_validRequest = true;
 	}
-	else if (_method == POST)
+	else if (_method == "POST")
 		_statusCode = "201 Created";
-	else if (_method == DELETE)
+	else if (_method == "DELETE")
 		_statusCode = "204 No Content";
-	else if (_method == GET )
+	else if (_method == "GET" )
 		_statusCode = "200 OK";
 	return (200);
 }

@@ -1,19 +1,18 @@
 #include "Request.hpp"
-#include <cstdlib>
-#include <iostream>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <ctime>
 
-extern char ** g_env;
+
+static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv);
+
 Request::Request(void)
-	: _clientfd(-1), _method(-1)
+	: _clientfd(-1), _method("NTM")
 {}
 
 Request::Request(int clientfd)
-	: _clientfd(clientfd), _method(-1)
+	: _clientfd(clientfd), _method("NTM")
 {}
-
 Request::Request(const Request& other)
 	: _clientfd(other._clientfd), _method(other._method), _statusCode(other._statusCode),
 		_boundary(other._boundary), _query(other._query),
@@ -59,28 +58,39 @@ static void getQuery(std::string& query, const std::string& name) {
 		query = name.substr(delimiter + 1);
 }
 
-void Request::initializeEnvpCGI(void)
-{
-}	
+void Request::initializeEnvpCGI(void) {
+	_cgiEnv["SERVER_SOFTWARE"] = "BOZOSERVER/2.0";
+	_cgiEnv["SERVER_NAME"] = "BOZO"; // parsing
+	_cgiEnv["SERVER_PORT"] = "8080"; // parsing
+	_cgiEnv["SERVER_PROTOCOL"] = "HTTP/1.1";
+	_cgiEnv["REQUEST_METHOD"] = _method;
+	_cgiEnv["GATEWAY_INTERFACE"] = "CGI/1.1";
+	_cgiEnv["CONTENT_TYPE"] = _requestHeader[CONTENT_TYPE];
+	_cgiEnv["CONTENT_LENGTH"] = _requestHeader[CONTENT_LENGTH];
+	_cgiEnv["REMOTE_ADDR"] = "0.0.0.0"; // parsing
+	_cgiEnv["PATH"] = "www/"; // parsing
+	_cgiEnv["HTTP_USER_AGENT"] = _requestHeader[USER_AGENT];
+}
 
-char **Request::GetEnvpInArray(void)
-{
-	char **arrayEnvpVariable =  new char *[this->_envpVariable.size()];
+static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv) {
+	char **arrayEnvpVariable =  new char *[_cgiEnv.size()];
 	int i = 0;
 	std::string tmp;
 	std::map<std::string, std::string>::iterator it;
-	for (it = this->_envpVariable.begin(); it != this->_envpVariable.end(); it++)
-	{
+	for (it = _cgiEnv.begin(); it != _cgiEnv.end(); it++) {
 		tmp = it->first + "=" + it->second;
 		arrayEnvpVariable[i] = (char *)tmp.c_str();
 		i++;
 	}
-
 	return (arrayEnvpVariable);
-}	
+}
 
-void Request::respondToGetCGI(std::string fileName)
-{
+// Function is working but we might need to change it 
+// to make the read() syscall go through select()
+void Request::respondToGetCGI(std::string fileName) {
+	initializeEnvpCGI();
+	_cgiEnv["SCRIPT_NAME"] = fileName;
+	_cgiEnv["URL"] = fileName;
 	/* TO-DO LIST
 	 * need to save the pid to kill it if we do a ctrl C during the loading of the CGI
 	 * change the envp variables of execve to the good one
@@ -90,8 +100,7 @@ void Request::respondToGetCGI(std::string fileName)
 	pipe(fds[0]);
 	pipe(fds[1]);
 	int pid = fork();
-	if (pid == 0)
-	{
+	if (pid == 0) {
 		dup2(fds[0][0], 0);
 		dup2(fds[1][1], 1);
 		close(fds[0][0]);
@@ -99,21 +108,20 @@ void Request::respondToGetCGI(std::string fileName)
 		close(fds[1][0]);
 		close(fds[1][1]);
 		std::string querys = _requestHeader[HEAD].substr(_requestHeader[HEAD].find("?") + 1, std::string::npos);
+		_cgiEnv["QUERY_STRING"] = querys;
 		char *args[4] = {(char *)"/usr/bin/python3", (char *)(fileName.c_str()),
 						(char *)(querys.c_str()),NULL};
 		//execve("/usr/bin/python3", args, GetEnvpInArray());
-		execve("/usr/bin/python3", args, g_env);
+		execve("/usr/bin/python3", args, getEnvpInArray(_cgiEnv));
 		exit(0);
 	}
-	else if (pid > 0)
-	{
+	else if (pid > 0) {
 		bool forkFinishedProperly = false;
 		std::time_t begin_time = std::time(NULL);
 		std::time_t actual_time = std::time(NULL);
 		while ((actual_time - begin_time) < TIMEOUT_CGI)
 		{
-			if (waitpid(pid, NULL, WNOHANG) != 0)
-			{
+			if (waitpid(pid, NULL, WNOHANG) != 0) {
 				forkFinishedProperly = true;
 				break ;
 			}
@@ -124,8 +132,7 @@ void Request::respondToGetCGI(std::string fileName)
 		close(fds[1][1]);
 		std::ostringstream ss;
 		setStatusCode();
-		if (forkFinishedProperly)
-		{
+		if (forkFinishedProperly) {
 			char buffer[BUFFER_SIZE] = {0};
 			int fileSize = read(fds[1][0], buffer, BUFFER_SIZE);
 
@@ -134,8 +141,7 @@ void Request::respondToGetCGI(std::string fileName)
 			ss << "Content-Length: " << fileSize << "\r\n\r\n";
 			ss << buffer;
 		}
-		else
-		{
+		else {
 			kill(pid, SIGKILL);	
 			std::string InfiniteLoopHTML = "<html><body><h1>Infinite loop in CGI</h1></body></html>";
 			ss << "HTTP/1.1 200\r\n";
@@ -154,6 +160,7 @@ void Request::respondToGetRequest(void) {
 	editName(_requestHeader[HEAD]);
 	getQuery(_query, _requestHeader[HEAD]);
 #if DEBUG
+	std::cout << "ORIGIN: " << _requestHeader[ORIGIN] << std::endl;
 	std::cout << _query << std::endl;
 #endif
 	DIR* directory = opendir(_requestHeader[HEAD].c_str());
@@ -162,10 +169,9 @@ void Request::respondToGetRequest(void) {
 		std::string fileName = _requestHeader[HEAD].substr(0, _requestHeader[HEAD].find("?"));
 		if (fileName.substr(fileName.length() - 3) == ".py")
 			respondToGetCGI(fileName);
-		else
-		{
+		else {
 			setStatusCode();
-			std::ifstream file(fileName.c_str(), std::ios::in | std::ios::binary);
+			std::ifstream file(_requestHeader[HEAD].c_str(), std::ios::in | std::ios::binary);
 
 			file.seekg(0, std::ios::end);
 			std::streampos fileSize = file.tellg();
@@ -190,9 +196,8 @@ void Request::respondToGetRequest(void) {
 	}
 }
 
-void Request::respondToPostCGI(std::string fileName)
-{
-	(void)fileName;
+void Request::respondToPostCGI(std::string fileName) {
+
 }
 
 void Request::respondToPostRequest(void) {
@@ -229,14 +234,14 @@ void Request::respondToDeleteRequest(void) {
 	file.close();
 }
 
-static int getMethod(std::string buffer) {
+static const std::string getMethod(std::string buffer) {
 	if (buffer.find("GET") != std::string::npos)
-		return (GET);
+		return ("GET");
 	else if (buffer.find("POST") != std::string::npos)
-		return (POST);
+		return ("POST");
 	else if (buffer.find("DELETE") != std::string::npos)
-		return (DELETE);
-	return (ERROR);
+		return ("DELETE");
+	return ("ERROR");
 }
 
 bool Request::readRequest(std::string const &rawRequest) {
@@ -249,7 +254,7 @@ bool Request::readRequest(std::string const &rawRequest) {
 		tmpBodyHeader = tmpBodyHeader.substr(0, tmpBodyHeader.find("\r\n\r\n"));
 		std::string tmpBoundary = tmpBodyHeader.substr(0, tmpBodyHeader.find("\r"));
 		long contentLength = std::atol(_requestHeader[CONTENT_LENGTH].c_str()) + tmpHeader.length() + 4 + tmpBodyHeader.length() + tmpBoundary.length() + 2;
-		if (_method == GET || (_method == POST && contentLength < BUFFER_SIZE)) {
+		if (_method == "GET" || (_method == "POST" && contentLength < BUFFER_SIZE)) {
 			headerRead = false;
 			return (true);
 		}
@@ -264,7 +269,7 @@ bool Request::readRequest(std::string const &rawRequest) {
 	return (false);
 }
 
-Request::~Request(void){
+Request::~Request(void) {
 }
 
 int Request::getClientfd(void) const {

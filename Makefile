@@ -20,7 +20,7 @@ OBJS    := $(addprefix objs/, $(SRCS:.cpp=.o))
 all: $(NAME)
 
 run: all
-	./${NAME} ConfigFiles/easy.conf
+	./${NAME} conf/easy.conf
 
 vg: all
 	valgrind --track-fds=yes --show-leak-kinds=all --leak-check=full ./${NAME} ConfigFiles/easy.conf

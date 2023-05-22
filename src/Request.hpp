@@ -18,13 +18,6 @@ typedef std::pair<int, std::string> strPair;
 #define DEBUG 0
 #define TIMEOUT_CGI 3
 
-enum methods {
-	ERROR,
-	GET,
-	POST,
-	DELETE
-};
-
 enum attributes {
 	BODY,
 	HEAD,
@@ -77,17 +70,16 @@ class Request {
 		int setStatusCode(void);
 		void directoryListing(DIR* directory, const std::string& dirName);
 		void initializeEnvpCGI(void);
-		char **GetEnvpInArray(void);
 
 	// Private member attributes
 	private:
 		int	_clientfd;
-		int _method;
+		std::string _method;
 		std::string _statusCode;
 		std::string _boundary;
 		std::string _query;
 		strMap _requestHeader;
 		bool _isDirectory;
 		bool _validRequest;
-		std::map<std::string, std::string> _envpVariable;
+		std::map<std::string, std::string> _cgiEnv;
 };

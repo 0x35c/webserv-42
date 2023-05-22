@@ -4,16 +4,14 @@ void Request::directoryListing(DIR* directory, const std::string& dirName) {
 	std::string tmpHTML = "<!DOCTYPE html>\
 	<html lang=\"en\">\
 	<head>\
-		<link rel=\"icon\" href=\"images.png\">\
-		<link rel=\"stylesheet\" href=\"style.css\">\
+		<meta charset=\"utf-8\">\
 	</head>\
 	<body style=\"background-color: rgb(181, 200, 95);\
 	font-family: \"sans-serif\";\">\
 	<h1>You are on " + dirName + " directory</h1>\
 	<h1><a href=\"/index.html\">HOME</a></br></h1>\
 	<p>\
-	<ul>\
-	";
+	<ul>";
 	(void)dirName;
 
 	struct dirent* file;

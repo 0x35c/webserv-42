@@ -49,18 +49,18 @@ void Request::processLine(std::string line, int lineToken) {
 					_validRequest = true;
 				else
 					_validRequest = false;
-				if (_method == GET && str.find(root) == std::string::npos) {
+				if (_method == "GET" && str.find(root) == std::string::npos) {
 					if (str.length() == 0)
 						_requestHeader.insert(strPair(HEAD, root + "/index.html"));
 					else
 						_requestHeader.insert(strPair(HEAD, root + "/" + str));
 				}
-				else if (_method == GET && str.find(root) != std::string::npos) {
+				else if (_method == "GET" && str.find(root) != std::string::npos) {
 					_requestHeader.insert(strPair(HEAD, str));
 				}
-				else if (_method == POST && str == "/")
+				else if (_method == "POST" && str == "/")
 					_requestHeader.insert(strPair(HEAD, "www/uploads/default"));
-				else if (_method == POST) {
+				else if (_method == "POST") {
 					str.erase(0, 1);
 					_requestHeader.insert(strPair(HEAD, str));
 				}
@@ -211,19 +211,13 @@ bool Request::parseBody(const std::string& buffer) {
 }
 
 void Request::respondToRequest(void) {
-	switch (_method) {
-		case GET:
-			respondToGetRequest();	
-			break;
-		case POST:
-			processBody(_boundary, _requestHeader[BODY], _requestHeader);
-			respondToPostRequest();	
-			break;
-		case DELETE:
-			respondToDeleteRequest();	
-			break;
-		default:
-			break;
+	if (_method == "GET")
+		respondToGetRequest();	
+	else if ("POST") {
+		processBody(_boundary, _requestHeader[BODY], _requestHeader);
+		respondToPostRequest();	
 	}
+	else if ("DELETE")
+		respondToDeleteRequest();	
 	_requestHeader.clear();
 }

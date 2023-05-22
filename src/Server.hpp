@@ -20,6 +20,7 @@
 #include "Request.hpp"
 
 #define LISTEN_BACKLOG 128
+#define DEBUG 0
 
 class Server {
 	public:

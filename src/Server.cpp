@@ -71,7 +71,6 @@ void Server::start(void)
 		readSet = _readSet;
 		if (select(FD_SETSIZE + 1, &readSet, NULL, NULL, NULL) < 0)
 			throw ServerException();
-
 		for (socketMap::iterator it = _sockets.begin(); it != _sockets.end(); it++) 
 			if (FD_ISSET(it->first, &readSet))
 				_acceptConnection(it->first, &it->second);
@@ -126,7 +125,6 @@ bool Server::_processRequest(int clientFd, Request &request)
 #if DEBUG
 	std::cout << rc << " bytes read\n";
 #endif
-	
 	if (request.readRequest(header_buffer))
 	{
 		request.respondToRequest();

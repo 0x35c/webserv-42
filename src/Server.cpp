@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <algorithm>
+#include <fcntl.h>
 
 #include "Server.hpp"
 
@@ -19,6 +20,12 @@ void Server::addAddress(std::string const &address, int port)
 	int fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0)
 		throw ServerException();
+	
+	/*
+	int flag = fcntl(fd, F_GETFL, 0);
+	flag |= O_NONBLOCK;
+	fcntl(fd, F_SETFL, flag);
+	*/
 
 	int option = 1;
 	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(int)) < 0)
@@ -64,15 +71,22 @@ void Server::start(void)
 		readSet = _readSet;
 		if (select(FD_SETSIZE + 1, &readSet, NULL, NULL, NULL) < 0)
 			throw ServerException();
-
-		for (socketMap::iterator it = _sockets.begin(); it != _sockets.end(); ++it)
+		for (socketMap::iterator it = _sockets.begin(); it != _sockets.end(); it++) 
 			if (FD_ISSET(it->first, &readSet))
 				_acceptConnection(it->first, &it->second);
 
-		for (requestMap::iterator it = _requests.begin(); it != _requests.end(); ++it)
+		for (requestMap::iterator it = _requests.begin(); it != _requests.end(); )
+		{
 			if (FD_ISSET(it->first, &readSet))
+			{
 				if (_processRequest(it->first, it->second))
+				{
 					_requests.erase(it++);
+					continue ;
+				}
+			}
+			it++;
+		}
 	}
 }
 
@@ -111,10 +125,8 @@ bool Server::_processRequest(int clientFd, Request &request)
 #if DEBUG
 	std::cout << rc << " bytes read\n";
 #endif
-	
 	if (request.readRequest(header_buffer))
 	{
-		std::cout << "here\n";
 		request.respondToRequest();
 #if DEBUG
 		std::cout << "response sent\n";

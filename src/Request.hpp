@@ -15,7 +15,8 @@ typedef std::map<int, std::string> strMap;
 typedef std::pair<int, std::string> strPair;
 
 #define BUFFER_SIZE 8192
-#define DEBUG 1
+#define DEBUG 0
+#define TIMEOUT_CGI 3
 
 enum methods {
 	ERROR,
@@ -65,7 +66,9 @@ class Request {
 	// Private member functions
 	private:
 		void respondToGetRequest(void);
+		void respondToGetCGI(std::string fileName);
 		void respondToPostRequest(void);
+		void respondToPostCGI(std::string fileName);
 		void respondToDeleteRequest(void);
 		void errorOnRequest(void);
 		void processLine(std::string line, int lineToken);
@@ -73,6 +76,8 @@ class Request {
 		bool parseBody(const std::string& buffer);
 		int setStatusCode(void);
 		void directoryListing(DIR* directory, const std::string& dirName);
+		void initializeEnvpCGI(void);
+		char **GetEnvpInArray(void);
 
 	// Private member attributes
 	private:
@@ -84,4 +89,5 @@ class Request {
 		strMap _requestHeader;
 		bool _isDirectory;
 		bool _validRequest;
+		std::map<std::string, std::string> _envpVariable;
 };

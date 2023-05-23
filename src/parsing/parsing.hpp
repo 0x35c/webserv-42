@@ -1,12 +1,12 @@
-#ifndef PARSING_HPP
-#define PARSING_HPP
+#pragma once
 
 #define WHITESPACE " \n\r\t\f\v"
 
 #include <string>
 #include <vector>
+#include <arpa/inet.h>
 
-typedef struct location {
+typedef struct s_location {
 	std::string	locationPath;
 	bool 		methodsAllowed[3];
 	int			redirectionCode;
@@ -20,20 +20,21 @@ typedef struct location {
 
 } t_location;
 
-typedef struct server {
+typedef struct s_server {
 	std::string 			host;
 	int						port;
 	std::string 			server_name;
 	bool					isDefaultServer;
 	std::string 			errpage;
 	int						maxFileSizeUpload;
+	sockaddr_in				socketAddress;
 	std::vector<t_location>	locations;
 } t_server;
 
 namespace Parsing
 {
 	//parseConfFile.cpp
-	const std::vector<server> parseConfFile(const std::string path);
+	const std::vector<t_server> parseConfFile(const std::string path);
 	const std::vector<t_server> readConfFile(std::ifstream & confFile);
 	void checkDifferentServer(std::vector<t_server> servers);
 
@@ -76,4 +77,3 @@ size_t 							countChar(const std::string string, const char delimiter);
 const std::string 				ParsingError(std::string error) throw();
 const std::string				intToString(const int number);
 const std::vector<std::string>	splitString(const std::string string, const char delimiter);
-#endif

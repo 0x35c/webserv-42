@@ -10,12 +10,12 @@ Server::Server(void)
 	FD_ZERO(&_readSet);
 }
 
-void Server::addAddress(std::string const &address, int port)
+void Server::addAddress(const t_server& serverConfig)
 {
 	sockaddr_in socketAddress;
 	socketAddress.sin_family = AF_INET;
-	socketAddress.sin_port = htons(port);
-	socketAddress.sin_addr.s_addr = inet_addr(address.c_str());
+	socketAddress.sin_port = htons(serverConfig.port);
+	socketAddress.sin_addr.s_addr = inet_addr(serverConfig.host.c_str());
 
 	int fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0)
@@ -31,7 +31,8 @@ void Server::addAddress(std::string const &address, int port)
 		throw ServerException();
 
 	FD_SET(fd, &_readSet);
-	_sockets[fd] = socketAddress;
+	_sockets[fd] = serverConfig;
+	_sockets[fd].socketAddress = socketAddress;
 }
 
 Server::Server(Server const &other)
@@ -58,7 +59,7 @@ void Server::start(void)
 	fd_set readSet;
 
 	for (socketMap::iterator it = _sockets.begin(); it != _sockets.end(); ++it)
-		std::cout << "Listening on " << inet_ntoa(it->second.sin_addr) << ":" << ntohs(it->second.sin_port) << std::endl;
+		std::cout << "Listening on " << inet_ntoa(it->second.socketAddress.sin_addr) << ":" << ntohs(it->second.socketAddress.sin_port) << std::endl;
 	while (true)
 	{
 		readSet = _readSet;
@@ -109,7 +110,7 @@ void Server::start(void)
 			continue ;
 		for (socketMap::iterator it = _sockets.begin(); it != _sockets.end(); it++) 
 			if (FD_ISSET(it->first, &readSet))
-				_acceptConnection(it->first, &it->second);
+				_acceptConnection(it->first, it->second);
 
 		for (requestMap::iterator it = _requests.begin(); it != _requests.end(); )
 		{
@@ -126,9 +127,9 @@ void Server::start(void)
 	}
 }
 
-void Server::_acceptConnection(int socketFd, sockaddr_in *address)
+void Server::_acceptConnection(int socketFd, const t_server& serverConfig)
 {
-	int fd = accept(socketFd, (sockaddr *)address, &_addressLen);
+	int fd = accept(socketFd, (sockaddr *)&(serverConfig.socketAddress), &_addressLen);
 	if (fd < 0)
 	{
 		if (errno != EAGAIN && errno != EWOULDBLOCK)
@@ -136,7 +137,7 @@ void Server::_acceptConnection(int socketFd, sockaddr_in *address)
 		return ;
 	}
 	FD_SET(fd, &_readSet);
-	_requests[fd] = Request(fd);
+	_requests[fd] = Request(fd, serverConfig);
 	_requests[fd].getCGI().inCGI = false;
 #if DEBUG
 	std::cout << "accepted connection\n";

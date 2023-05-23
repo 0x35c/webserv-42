@@ -28,26 +28,26 @@ class Server {
 		~Server();
 
 		void start(void);
-		void addAddress(std::string const &address, int port);
+		void addAddress(const t_server& serverConfig);
 
 		class ServerException : public std::exception {
 			public:
 				char const *what(void) const throw();
 		};
 
-
 	private:
-		typedef std::map<int, sockaddr_in> socketMap;
+		typedef std::map<int, t_server> socketMap;
 		typedef std::map<int, Request> requestMap;
 
 		socketMap	_sockets;
 		requestMap	_requests;
 		socklen_t	_addressLen;
 		fd_set 		_readSet;
+		t_server	_config;
 
 		Server(Server const &other);
 		Server &operator=(Server const &other);
 
-		void _acceptConnection(int socketFd, sockaddr_in *address);
+		void _acceptConnection(int socketFd, const t_server& serverConfig);
 		bool _processRequest(int clientFd, Request &request);
 };

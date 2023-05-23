@@ -82,19 +82,17 @@ void Request::processLine(std::string line, int lineToken) {
 		_requestHeader.insert(strPair(lineToken, str));
 }
 
-static t_location& getLocation(const std::string& path, std::vector<t_location>& locations) {
-	std::cout << "Header: " << path << std::endl;
-	std::cout << "Conf: " << locations[0].locationPath << std::endl;
+static t_location* getLocation(const std::string& path, std::vector<t_location>& locations) {
 	for (std::vector<t_location>::iterator it = locations.begin(); it != locations.end(); it++) {
 		if (path == it->locationPath)
-			return (*it);
+			return (&(*it));
 	}
-	return (*locations.end());
+	return (NULL);
 }
 
 int Request::getLineToken(std::string line) {
 	if (line.find("POST") != std::string::npos || line.find("GET") != std::string::npos || line.find("DELETE") != std::string::npos) {
-		_location = getLocation(_requestHeader[HEAD], _serverConfig.locations);
+		_location = getLocation(getToken(line, ' ', 2), _serverConfig.locations);
 		return (HEAD);
 	}
 	else if (line.find("Host:") != std::string::npos)

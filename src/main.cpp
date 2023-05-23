@@ -38,7 +38,7 @@ int	main(int argc, char **argv, char **envp)
 			server.addAddress(*it);
 		server.start();
 	}
-	catch(const Server::ServerException& e)
+	catch(const std::exception& e)
 	{
 		std::cerr << e.what() << '\n';
 		return EXIT_FAILURE;

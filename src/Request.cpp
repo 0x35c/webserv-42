@@ -13,6 +13,7 @@ Request::Request(void)
 Request::Request(int clientfd, const t_server& serverConfig)
 	: _clientfd(clientfd), _method("NTM"), _serverConfig(serverConfig)
 {}
+
 Request::Request(const Request& other)
 	: _clientfd(other._clientfd), _method(other._method), _statusCode(other._statusCode),
 		_boundary(other._boundary), _query(other._query),

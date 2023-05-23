@@ -24,9 +24,11 @@ void	Parsing::parseLineMethodBlock(const std::string & line, const int & nbLine,
 
 void	Parsing::parseLineLocationBlock(const std::string & line, const int & nbLine, t_location & location)
 {
-	std::string arguments[8] = { "methods", "return", "root", "directory_listing", "index", "", "accept_uploaded_file", "save_uploaded_file" };
+	std::string arguments[8] = { "methods", "return", "root", "directory_listing", "index", "CGI", "accept_uploaded_file", "save_uploaded_file" };
 	bool argumentsUsed[8] = {false};
-	void (*argumentsFunctions[8])(t_location &, const int &, const std::vector<std::string> &) = {&methodAttribute, &returnAttribute, &rootAttribute, &directoryListingAttribute, &indexAttribute, NULL, &acceptUploadedFileAttribute, &saveUploadedFileAttribute};
+	void (*argumentsFunctions[8])(t_location &, const int &, const std::vector<std::string> &) = {&methodAttribute,
+		&returnAttribute, &rootAttribute, &directoryListingAttribute, &indexAttribute, &CGIAttribute,
+		&acceptUploadedFileAttribute, &saveUploadedFileAttribute};
 	std::vector<std::string> lineSplitted = splitString(line, ' ');
 	
 	if (lineSplitted.size() < 2)
@@ -44,8 +46,6 @@ void	Parsing::parseLineLocationBlock(const std::string & line, const int & nbLin
 	}
 	throw(ParsingError("line " + intToString(nbLine) + " has an incorrect variable declaration."));
 }
-
-#include <iostream>
 
 void	Parsing::parseLineServerBlock(const std::string & line, const int & nbLine, t_server & server)
 {

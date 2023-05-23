@@ -28,8 +28,9 @@ const std::vector<t_server> Parsing::readConfFile(std::ifstream & confFile)
 	{
 		nbLine++;
 		trimString(line, WHITESPACE);
-		if (line[0] == '#' && line[1] == '#')
-			continue ;
+		line = line.substr(0, line.find("##"));
+		if (line.length() == 0)
+			continue;
 		else if (!inServerBlock && !inLocationBlock && !inMethodBlock)
 		{
 			if (line.length() > 0 && line != "server {")
@@ -39,39 +40,41 @@ const std::vector<t_server> Parsing::readConfFile(std::ifstream & confFile)
 		}
 		else if (inServerBlock && !inLocationBlock && !inMethodBlock)
 		{
-			if (line.length() == 0)
-				continue;
-			else if (strncmp(line.c_str(), "location", 8) == 0)
+			if (strncmp(line.c_str(), "location", 8) == 0)
+			{
+				std::vector<std::string> lineSplitted = splitString(line, ' ');
+				if (lineSplitted.size() != 3)
+					throw(ParsingError("line " + intToString(nbLine) + " is invalid."));
+				location.locationPath = lineSplitted[1];
+				initializeLocation(location);
 				inLocationBlock = true;
+			}
 			else if (line == "}")
 			{
 				servers.push_back(server);
 				inServerBlock = false;
 			}
-			if (line != "}")
+			else
 				parseLineServerBlock(line, nbLine, server);
 		}
 		else if (inServerBlock && inLocationBlock && !inMethodBlock)
 		{
-			if (line.length() == 0)
-				continue;
-			else if (strncmp(line.c_str(), "methods", 7) == 0)
+			if (strncmp(line.c_str(), "methods", 7) == 0)
 				inMethodBlock = true;
 			else if (line == "}")
 			{
+				testLocationValue(location);
 				server.locations.push_back(location);
 				inLocationBlock = false;
 			}
-			if (line != "}")
+			else
 				parseLineLocationBlock(line, nbLine, location);
 		}
 		else if (inServerBlock && inLocationBlock && inMethodBlock)
 		{
-			if (line.length() == 0)
-				continue;
-			else if (line == "}")
+			if (line == "}")
 				inMethodBlock = false;
-			if (line != "}")
+			else
 				parseLineMethodBlock(line, nbLine, location);
 		}
 	}

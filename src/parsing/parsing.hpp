@@ -2,6 +2,10 @@
 #define PARSING_HPP
 
 #define WHITESPACE " \n\r\t\f\v"
+#define ROOT 0
+#define REDIRECTION 1
+#define UPLOAD 2
+#define INDEX 3
 
 #include <string>
 #include <vector>
@@ -16,7 +20,9 @@ typedef struct location {
 	std::string	index;
 	bool		acceptUploadedFile;
 	std::string	uploadedFilePath;
-	//add CGI content
+	int			lines[4];
+	std::string executableCGI;
+	std::string extensionCGI;
 
 } t_location;
 
@@ -45,6 +51,8 @@ namespace Parsing
 
 	//attributeFunction.cpp
 
+	void testLocationValue(const t_location & location);
+	void CGIAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted);
 	void methodAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted);
 	void returnAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted);
 	void rootAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted);

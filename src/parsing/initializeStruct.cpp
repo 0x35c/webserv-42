@@ -1,14 +1,15 @@
 #include "parsing.hpp"
 
 void	Parsing::initializeLocation(t_location & location)
-{
-	location.locationPath = ""; // "/" ?
+{ 
 	for (int i = 0; i < 3; i++)
 		location.methodsAllowed[i] = true;
 	location.redirectionCode = 0; // ?
-	location.redirectionPath = ""; // ?ZZ
+	location.redirectionPath = ""; // ?
 	location.root = ""; // locationPath ?
 	location.directoryListing = true;
+	location.executableCGI = "/usr/bin/python3";
+	location.extensionCGI = ".py";
 	location.index = ""; // ? {locationPath}/index.html => error page if doesn't exist ?
 	location.acceptUploadedFile = true;
 	location.uploadedFilePath = ""; // {locationPath}/uploads/ => need to create directory || www/uploads/ ?

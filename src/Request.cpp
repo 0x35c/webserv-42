@@ -4,20 +4,21 @@
 #include <fcntl.h>
 #include <ctime>
 
-
-//static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv);
+static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv);
 
 Request::Request(void)
 	: _clientfd(-1), _method("NTM")
 {}
 
-Request::Request(int clientfd)
-	: _clientfd(clientfd), _method("NTM")
+Request::Request(int clientfd, const t_server& serverConfig)
+	: _clientfd(clientfd), _method("NTM"), _serverConfig(serverConfig)
 {}
+
 Request::Request(const Request& other)
 	: _clientfd(other._clientfd), _method(other._method), _statusCode(other._statusCode),
 		_boundary(other._boundary), _query(other._query),
-		_requestHeader(other._requestHeader), _isDirectory(other._isDirectory)
+		_requestHeader(other._requestHeader), _isDirectory(other._isDirectory),
+		_serverConfig(other._serverConfig)
 {}
 
 Request&	Request::operator=(const Request& other) {
@@ -29,6 +30,7 @@ Request&	Request::operator=(const Request& other) {
 		_query = other._query;
 		_requestHeader = other._requestHeader;
 		_isDirectory = other._isDirectory;
+		_serverConfig = other._serverConfig;
 	}
 	return *this;
 }
@@ -73,7 +75,6 @@ void Request::initializeEnvpCGI(void) {
 	_cgiEnv["HTTP_USER_AGENT"] = _requestHeader[USER_AGENT];
 }
 
-/*
 static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv) {
 	char **arrayEnvpVariable =  new char *[_cgiEnv.size()];
 	int i = 0;
@@ -86,7 +87,7 @@ static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv) {
 	}
 	return (arrayEnvpVariable);
 }
-*/
+
 // Function is working but we might need to change it 
 // to make the read() syscall go through select()
 void Request::respondToGetCGI(std::string fileName) {
@@ -114,8 +115,8 @@ void Request::respondToGetCGI(std::string fileName) {
 		_cgiEnv["QUERY_STRING"] = querys;
 		char *args[4] = {(char *)"/usr/bin/python3", (char *)(fileName.c_str()),
 						(char *)(querys.c_str()),NULL};
-		//execve("/usr/bin/python3", args, getEnvpInArray(_cgiEnv));
-		execve("/usr/bin/python3", args, NULL);
+		execve("/usr/bin/python3", args, getEnvpInArray(_cgiEnv));
+		//execve("/usr/bin/python3", args, NULL);
 		exit(0);
 	}
 	else if (pid > 0)
@@ -133,6 +134,7 @@ void Request::respondToGetRequest(void) {
 	getQuery(_query, _requestHeader[HEAD]);
 #if DEBUG
 	std::cout << "ORIGIN: " << _requestHeader[ORIGIN] << std::endl;
+	std::cout << "FILENAME: " << _requestHeader[HEAD] << std::endl;
 	std::cout << _query << std::endl;
 #endif
 	DIR* directory = opendir(_requestHeader[HEAD].c_str());
@@ -140,12 +142,11 @@ void Request::respondToGetRequest(void) {
 	_cgi.inCGI = false;
 	if (directory == NULL) {
 		std::string fileName = _requestHeader[HEAD].substr(0, _requestHeader[HEAD].find("?"));
-		if (fileName.substr(fileName.length() - 3) == ".py") {
+		if (fileName.length() > 3 && fileName.substr(fileName.length() - 3) == ".py") {
 			_cgi.inCGI = true;
 			respondToGetCGI(fileName);
 		}
-		else
-		{
+		else {
 			setStatusCode();
 			std::ifstream file(_requestHeader[HEAD].c_str(), std::ios::in | std::ios::binary);
 
@@ -252,14 +253,14 @@ void Request::respondToDeleteRequest(void) {
 	file.close();
 }
 
-static const std::string getMethod(std::string buffer) {
+const std::string Request::getMethod(std::string buffer) {
 	if (buffer.find("GET") != std::string::npos)
 		return ("GET");
 	else if (buffer.find("POST") != std::string::npos)
 		return ("POST");
 	else if (buffer.find("DELETE") != std::string::npos)
 		return ("DELETE");
-	return ("ERROR");
+	return ("FORBIDDEN");
 }
 
 bool Request::readRequest(std::string const &rawRequest) {
@@ -299,6 +300,6 @@ int Request::getClientfd(void) const {
 	return (_clientfd);
 }
 
-t_cgi & Request::getCGI(void) {
+t_cgi& Request::getCGI(void) {
 	return (_cgi);
 }

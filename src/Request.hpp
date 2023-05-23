@@ -8,17 +8,22 @@
 #include <sstream>
 #include <unistd.h>
 #include <iostream>
-#include <arpa/inet.h>
 #include <cstdlib>
 #include <vector>
-
-typedef std::map<int, std::string> strMap;
-typedef std::pair<int, std::string> strPair;
+#include "parsing/parsing.hpp"
 
 #define BUFFER_SIZE 8192
 #define DEBUG 0
+typedef std::map<int, std::string> strMap;
+typedef std::pair<int, std::string> strPair;
 
-enum attributes {
+enum methods {
+	GET,
+	POST,
+	DELETE
+};
+
+enum headerAttributes {
 	BODY,
 	HEAD,
 	HOST,
@@ -52,17 +57,17 @@ typedef struct s_cgi {
 class Request {
 	public:
 		Request(void);
-		Request(int clientfd);
+		Request(int clientfd, const t_server& serverConfig);
 		Request(const Request& other);
 		Request& operator=(const Request& other);
 		~Request(void);
 
 		// Public member functions
-		bool readRequest(std::string const &rawRequest);
+		bool readRequest(std::string const& rawRequest);
 		void respondToRequest(void);
 
 		int getClientfd(void) const;
-		t_cgi & getCGI(void);
+		t_cgi& getCGI(void);
 
 	// Private member functions
 	private:
@@ -76,6 +81,8 @@ class Request {
 		void parseHeader(const std::string& request);
 		bool parseBody(const std::string& buffer);
 		int setStatusCode(void);
+		int getLineToken(std::string line);
+		const std::string getMethod(std::string buffer);
 		void directoryListing(DIR* directory, const std::string& dirName);
 		void initializeEnvpCGI(void);
 
@@ -91,4 +98,6 @@ class Request {
 		bool _validRequest;
 		std::map<std::string, std::string> _cgiEnv;
 		t_cgi _cgi;
+		t_server _serverConfig;
+		t_location* _location;
 };

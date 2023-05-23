@@ -3,17 +3,38 @@ import cgi
 
 cgitb.enable()
 
-print("<!DOCTYPE html>")
-print("<html>")
-print("<body>")
-form = cgi.FieldStorage()
+HTML = """\
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Hello there!</title>
+    </head>
+    <body>
+        <h1>Hello there!</h1>
+        {}
+    </body>
+</html>
+"""
 
-print("<h1>Hello there!</h1>")
-if "name" not in form or "addr" not in form:
-    print("<h1>Error</h1>")
-    print("<p>Please fill in the name and addr fields.</p>")
-else:
-    print("<p>name:" + form["name"].value + "</p>")
-    print("<p>addr:" + form["addr"].value + "</p>")
-print("</body>")
-print("</html>")
+ERROR = """\
+<h1>Error</h1>
+<p>Please fill in the name and addr fields.</p>
+"""
+
+SUCCESS = """\
+<p>name:{}</p>
+<p>name:{}</p>
+"""
+
+
+def main() -> None:
+    form = cgi.FieldStorage()
+
+    if "name" not in form or "addr" not in form:
+        print(HTML.format(ERROR))
+    else:
+        print(HTML.format(SUCCESS.format(form["name"].value, form["addr"].value)))
+
+
+if __name__ == "__main__":
+    main()

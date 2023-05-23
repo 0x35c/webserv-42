@@ -1,6 +1,7 @@
 #include <iostream>
 #include <csignal>
 #include <cstdlib>
+#include <vector>
 
 #include "Server.hpp"
 #include "parsing/parsing.hpp"
@@ -33,8 +34,8 @@ int	main(int argc, char **argv, char **envp)
 	Server server;
 	try
 	{
-		for (size_t i = 0; i < serverConfigFile.size(); i++)
-			server.addAddress(serverConfigFile[i].host, serverConfigFile[i].port);
+		for (std::vector<t_server>::iterator it = serverConfigFile.begin(); it != serverConfigFile.end(); ++it)
+			server.addAddress(*it);
 		server.start();
 	}
 	catch(const std::exception & e)

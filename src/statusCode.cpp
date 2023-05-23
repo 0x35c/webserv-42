@@ -66,6 +66,9 @@ int Request::setStatusCode(void) {
 #if DEBUG
 	std::cout << _requestHeader[HEAD] << std::endl;
 #endif
+	/* if (_method == "GET" && _location.methodsAllowed[GET] == false) { */
+	/* 	_statusCode = "405 Method Not Allowed"; */
+	/* } */
 	if (!file && _method != "POST") {
 		_statusCode = "404 Not Found";
 		_requestHeader[HEAD] = "src/404";

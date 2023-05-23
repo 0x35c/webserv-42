@@ -37,11 +37,10 @@ int	main(int argc, char **argv, char **envp)
 			server.addAddress(serverConfigFile[i].host, serverConfigFile[i].port);
 		server.start();
 	}
-	catch(const std::exception& e)
+	catch(const std::exception & e)
 	{
 		std::cerr << e.what() << '\n';
 		return EXIT_FAILURE;
 	}
-
 	return EXIT_SUCCESS;
 }

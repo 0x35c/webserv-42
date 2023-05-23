@@ -111,7 +111,7 @@ static void processBody(std::string& boundary, std::string& line, strMap& reques
 	int i = 1;
 	std::string str = getToken(line, '\n', i);
 	trimString(str, "-\r");
-	if (str == boundary) {
+	if (!boundary.empty() && str == boundary) {
 		i++;
 		while (i < 4) {
 			str = getToken(line, '\n', i);
@@ -155,7 +155,10 @@ void Request::parseHeader(const std::string& buffer) {
 			i++;
 		}
 		if (line == "\r")
+		{
+			//std::cout << buffer;
 			break ;
+		}
 		lineToken = getLineToken(line);
 		processLine(line, lineToken);
 		line.clear();
@@ -182,7 +185,6 @@ bool Request::parseBody(const std::string& buffer) {
 	/* 	std::cout << "Tmp boundary: " << tmp << std::endl; */
 	/* 	std::cout << "Boundary: " << _boundary << std::endl; */
 		
-	/* 	std::cout << "Body: " << _requestHeader[BODY]; */
 	/* } */
 	/* if (end != std::string::npos) */
 	/* 	sizeBody = end - start; */
@@ -192,14 +194,14 @@ bool Request::parseBody(const std::string& buffer) {
 	/* std::cout << "BOUNDARY: " << _boundary << std::endl; */
 	/* std::cout << "Start: " << start << std::endl; */
 	/* std::cout << "End: " << end << std::endl; */
-	/* std::cout << "Content Length: " << _requestHeader[CONTENT_LENGTH] << std::endl;; */
+	//std::cout << "Content Length: " << _requestHeader[CONTENT_LENGTH] << std::endl;
+	//std::cout << "Body: " << _requestHeader[BODY].length();
 	/* std::cout << "Size body: " << sizeBody << std::endl; */
 	size_t pos = buffer.find(_boundary);
 	if (pos != std::string::npos && pos > _boundary.length() + 30) {
-		/* std::cout << buffer << std::endl; */
-		/* std::cout << buffer; */
+		//std::cout << buffer;
+		//std::cout << "Body finished" << std::endl;
 #if DEBUG
-		std::cout << "Body finished" << std::endl;
 #endif
 		return (true);
 	}
@@ -213,11 +215,11 @@ bool Request::parseBody(const std::string& buffer) {
 void Request::respondToRequest(void) {
 	if (_method == "GET")
 		respondToGetRequest();	
-	else if ("POST") {
+	else if (_method == "POST") {
 		processBody(_boundary, _requestHeader[BODY], _requestHeader);
 		respondToPostRequest();	
 	}
-	else if ("DELETE")
+	else if (_method == "DELETE")
 		respondToDeleteRequest();	
 	_requestHeader.clear();
 }

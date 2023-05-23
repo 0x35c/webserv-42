@@ -173,12 +173,54 @@ void Request::respondToGetRequest(void) {
 }
 
 void Request::respondToPostCGI(std::string fileName) {
-	(void)fileName;
+	initializeEnvpCGI();
+	_cgiEnv["SCRIPT_NAME"] = fileName;
+	_cgiEnv["URL"] = fileName;
+	/* TO-DO LIST
+	 * need to save the pid to kill it if we do a ctrl C during the loading of the CGI
+	 * change the envp variables of execve to the good one
+	 * check return of functions (pipe, dup2, close, read, send, kill)
+	*/
+	pipe(_cgi.fds[0]);
+	pipe(_cgi.fds[1]);
+	int pid = fork();
+	if (pid == 0)
+	{
+		dup2(_cgi.fds[0][0], 0);
+		dup2(_cgi.fds[1][1], 1);
+		close(_cgi.fds[0][0]);
+		close(_cgi.fds[0][1]);
+		close(_cgi.fds[1][0]);
+		close(_cgi.fds[1][1]);
+
+		std::string querys = _requestHeader[BODY];
+		_cgiEnv["QUERY_STRING"] = querys;
+		char *args[4] = {(char *)"/usr/bin/python3", (char *)(fileName.c_str()),
+						(char *)(querys.c_str()),NULL};
+		//execve("/usr/bin/python3", args, getEnvpInArray(_cgiEnv));
+		execve("/usr/bin/python3", args, NULL);
+		exit(0);
+	}
+	else if (pid > 0)
+	{
+		_cgi.pid = pid;
+		_cgi.begin_time = std::time(NULL);
+		close(_cgi.fds[0][0]);
+		close(_cgi.fds[0][1]);
+		close(_cgi.fds[1][1]);
+	}
 }
 
 void Request::respondToPostRequest(void) {
 	int statusCode = setStatusCode();
 
+	_cgi.inCGI = false;
+	std::string fileName = _requestHeader[HEAD].substr(0, _requestHeader[HEAD].find("?"));
+	if (fileName.substr(fileName.length() - 3) == ".py") {
+		_cgi.inCGI = true;
+		respondToPostCGI("www/c" + _requestHeader[HEAD]); // need to correct this
+		return ;
+	}
 	std::ostringstream ss;
 	if (_requestHeader[HEAD] != "")
 		_statusCode = "302 Redirect";
@@ -225,6 +267,11 @@ bool Request::readRequest(std::string const &rawRequest) {
 	if (headerRead == false) {
 		_method = getMethod(rawRequest);
 		parseHeader(rawRequest);
+		if (_method == "POST" && _boundary.empty())
+		{
+			headerRead = false;
+			return (true);
+		}
 		std::string tmpHeader = rawRequest.substr(0, rawRequest.find("\r\n\r\n"));
 		std::string tmpBodyHeader = rawRequest.substr(rawRequest.find("\r\n\r\n") + 4, std::string::npos);
 		tmpBodyHeader = tmpBodyHeader.substr(0, tmpBodyHeader.find("\r\n\r\n"));

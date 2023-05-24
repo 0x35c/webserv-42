@@ -116,7 +116,11 @@ void Request::respondToGetCGI(std::string fileName) {
 		char *args[4] = {(char *)"/usr/bin/python3", (char *)(fileName.c_str()),
 						(char *)(querys.c_str()),NULL};
 		execve("/usr/bin/python3", args, getEnvpInArray(_cgiEnv));
-		//execve("/usr/bin/python3", args, NULL);
+		/*
+		 TEST
+		std::string executionFailed = "<html><body><h1>execution of CGI failed</h1></body></html>";
+		write(1, executionFailed.c_str(), executionFailed.length());
+		*/
 		exit(0);
 	}
 	else if (pid > 0)

@@ -54,12 +54,6 @@ Server::~Server()
 		{
 			close(it->second.getCGI().fds[1][0]);
 			kill(it->second.getCGI().pid, SIGKILL);
-			/*
-			if (close(it->second.getCGI().fds[1][0]) == -1)
-				throw (ServerException());
-			if (kill(it->second.getCGI().pid, SIGKILL) < 0)
-				throw (ServerException());
-			*/
 		}
 		it++;
 	}

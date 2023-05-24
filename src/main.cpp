@@ -15,7 +15,7 @@ void signal_handler(int signum)
 int	main(int argc, char **argv)
 {
 	signal(SIGINT, signal_handler);
-	
+
 	std::vector<t_server> serverConfigFile;
 	try
 	{

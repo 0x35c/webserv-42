@@ -107,4 +107,6 @@ class Request {
 		t_cgi _cgi;
 		t_server _serverConfig;
 		t_location* _location;
+		bool _chunkBufferFull;
+		std::string _chunkBuffer;
 };

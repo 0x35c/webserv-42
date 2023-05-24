@@ -4,7 +4,7 @@
 //
 // 200 Status codes represent successful responses
 //
-// 200 - OK => Generic success status (the request 
+// 200 - OK => Generic success status (the request
 // was successful, whatever it was trying to do)
 //
 // 201 - Created => Same as 200 but specific to POST method
@@ -13,7 +13,7 @@
 //
 //
 // 300 Status codes are for redirecting
-// 
+//
 // 304 - Not Modified => Status code used for caching,
 // when the requested resource has not been changed
 // and it is still available in the cache
@@ -37,7 +37,7 @@
 // 500 Status codes are for errors due to the server
 //
 // 500 - Internal Server Error => Used in any situation when
-// the server has an error but does not have a specific code 
+// the server has an error but does not have a specific code
 // to handle it
 //
 // 503 - Service Unavailable => The server cannot handle the

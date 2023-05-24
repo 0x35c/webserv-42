@@ -1,9 +1,10 @@
 #include "Request.hpp"
+#include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <ctime>
-#include "Server.hpp"
+
 static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv);
 
 Request::Request(void)
@@ -53,12 +54,6 @@ static void editName(std::string& name) {
 		else
 			break ;
 	}
-}
-
-static void getQuery(std::string& query, const std::string& name) {
-	size_t delimiter = name.find("?");
-	if (delimiter != std::string::npos)
-		query = name.substr(delimiter + 1);
 }
 
 void Request::sendErrorResponse(void) {
@@ -111,7 +106,7 @@ void Request::executeCGI(std::string fileName) {
 	_cgiEnv["URL"] = fileName;
 	if (pipe(_cgi.fds[0]) == -1
 		|| pipe(_cgi.fds[1]) == -1)
-		throw (Server::ServerException());
+		throw (Request::RequestException());
 	int pid = fork();
 	if (pid == 0)
 	{
@@ -121,7 +116,7 @@ void Request::executeCGI(std::string fileName) {
 			|| close(_cgi.fds[0][1]) == -1
 			|| close(_cgi.fds[1][0]) == -1
 			|| close(_cgi.fds[1][1]) == -1)
-			throw (Server::ServerException());
+			throw (Request::RequestException());
 
 		if (_method == "POST")
 			_query = _requestHeader[BODY];
@@ -140,7 +135,7 @@ void Request::executeCGI(std::string fileName) {
 		if (close(_cgi.fds[0][0]) == -1
 			|| close(_cgi.fds[0][1]) == -1
 			|| close(_cgi.fds[1][1]) == -1)
-			throw (Server::ServerException());
+			throw (Request::RequestException());
 		if (pid > 0)
 		{
 			_cgi.pid = pid;
@@ -150,14 +145,13 @@ void Request::executeCGI(std::string fileName) {
 		{
 			_cgi.inCGI = false;
 			if (close(_cgi.fds[1][0]) == -1)
-				throw (Server::ServerException());
+				throw (Request::RequestException());
 		}
 	}
 }
 
 void Request::respondToGetRequest(void) {
 	editName(_requestHeader[HEAD]);
-	getQuery(_query, _requestHeader[HEAD]);
 #if DEBUG
 	std::cout << "ORIGIN: " << _requestHeader[ORIGIN] << std::endl;
 	std::cout << "FILENAME: " << _requestHeader[HEAD] << std::endl;
@@ -301,4 +295,8 @@ t_cgi& Request::getCGI(void) {
 
 const std::string& Request::getStatusCode(void) const {
 	return (_statusCode);
+}
+
+char const *Request::RequestException::what(void) const throw() {
+	return strerror(errno);
 }

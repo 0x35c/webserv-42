@@ -1,8 +1,7 @@
-#include <string>
-
 #include "Request.hpp"
 #include <vector>
 #include <algorithm>
+#include <string>
 
 void trimString(std::string& string, const char* charset);
 static std::string getToken(const std::string& str, char sep, int pos){
@@ -241,7 +240,16 @@ bool Request::parseBody(const std::string& buffer) {
 	return (false);
 }
 
+static void getQuery(std::string& query, std::string& name) {
+	size_t delimiter = name.find("?");
+	if (delimiter != std::string::npos) {
+		query = name.substr(delimiter + 1);
+		name = name.substr(0, delimiter);
+	}
+}
+
 void Request::respondToRequest(void) {
+	getQuery(_query, _requestHeader[HEAD]);
 	if (_method == "GET")
 		respondToGetRequest();	
 	else if (_method == "POST") {

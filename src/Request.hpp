@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string>
 #include <map>
 #include <dirent.h>
 #include <sys/socket.h>
@@ -70,6 +69,11 @@ class Request {
 		int getClientfd(void) const;
 		const std::string& getStatusCode(void) const;
 		t_cgi& getCGI(void);
+
+		class RequestException : public std::exception {
+			public:
+				char const *what(void) const throw();
+		};
 
 	// Private member functions
 	private:

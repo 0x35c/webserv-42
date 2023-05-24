@@ -1,3 +1,5 @@
+#include <string>
+
 #include "Request.hpp"
 #include <vector>
 #include <algorithm>
@@ -125,6 +127,8 @@ int Request::getLineToken(std::string line) {
 	}
 	else if (line.find("Content-Length:") != std::string::npos)
 		return (CONTENT_LENGTH);
+	else if (line.find("Transfer-Encoding:") != std::string::npos)
+		return (TRANSFER_ENCODING);
 	else
 		return (-2);
 }
@@ -194,32 +198,42 @@ void Request::parseHeader(const std::string& buffer) {
 	_requestHeader[BODY] = line;
 }
 
+bool Request::parseChunkedBody(const std::string& buffer) {
+	static bool bufferFull = false;
+	static std::string tmpBody = "";
+	if (!bufferFull)
+	{
+		tmpBody += buffer;
+		if (buffer.find("\r\n0\r\n", 0) != std::string::npos)
+			bufferFull = true;
+		else
+			return (false);
+	}
+
+	std::size_t pos = 0;
+	while (true) {
+		std::size_t limPos = tmpBody.find("\r\n", pos);
+		std::string tmp = tmpBody.substr(pos, limPos - pos);
+		long size = std::strtol(tmp.c_str(), NULL, 16);
+		if (size == 0) {
+			std::cout << "Body finished" << std::endl;
+			tmpBody.clear();
+			bufferFull = false;
+			return (true);
+		}
+		_requestHeader[BODY] += tmpBody.substr(limPos + 2, size);
+		pos = limPos + 2 + size + 2;
+	}
+}
+
 bool Request::parseBody(const std::string& buffer) {
+	if (_requestHeader[TRANSFER_ENCODING] == "chunked")
+		return (parseChunkedBody(buffer));
+
 	_requestHeader[BODY] += buffer;
-	/* size_t start = _requestHeader[BODY].find("\r\n\r\n"); */
-	/* size_t end = std::string::npos; */
-	/* if (start != std::string::npos) { */
-	/* 	std::string tmp = _boundary; */
-	/* 	trimString(tmp, "-"); */
-	/* 	std::cout << "Tmp boundary: " << tmp << std::endl; */
-	/* 	std::cout << "Boundary: " << _boundary << std::endl; */
-		
-	/* } */
-	/* if (end != std::string::npos) */
-	/* 	sizeBody = end - start; */
-	/* /1* std::string header = _requestHeader[BODY].substr(0, _requestHeader[BODY].find("\r\n\r\n")); *1/ */
-	/* /1* std::cout << "Header: " << header << std::endl; *1/ */
-	/* /1* sizeHeader = header.length() + 4 + _boundary.length(); *1/ */
-	/* std::cout << "BOUNDARY: " << _boundary << std::endl; */
-	/* std::cout << "Start: " << start << std::endl; */
-	/* std::cout << "End: " << end << std::endl; */
-	//std::cout << "Content Length: " << _requestHeader[CONTENT_LENGTH] << std::endl;
-	//std::cout << "Body: " << _requestHeader[BODY].length();
-	/* std::cout << "Size body: " << sizeBody << std::endl; */
 	size_t pos = buffer.find(_boundary);
 	if (pos != std::string::npos && pos > _boundary.length() + 30) {
 #if DEBUG
-		/* std::cout << buffer; */
 		std::cout << "Body finished" << std::endl;
 #endif
 		return (true);

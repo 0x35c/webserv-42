@@ -76,15 +76,17 @@ void Request::initializeEnvpCGI(void) {
 }
 
 static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv) {
-	char **arrayEnvpVariable =  new char *[_cgiEnv.size()];
+	char **arrayEnvpVariable =  new char *[_cgiEnv.size() + 1];
 	int i = 0;
-	std::string tmp;
+	std::string *tmp;
 	std::map<std::string, std::string>::iterator it;
 	for (it = _cgiEnv.begin(); it != _cgiEnv.end(); it++) {
-		tmp = it->first + "=" + it->second;
-		arrayEnvpVariable[i] = (char *)tmp.c_str();
+		tmp = new std::string;
+		*tmp = it->first + "=" + it->second + "\0";
+		arrayEnvpVariable[i] = (char *)tmp->c_str();
 		i++;
 	}
+	arrayEnvpVariable[i] = NULL;
 	return (arrayEnvpVariable);
 }
 
@@ -116,12 +118,10 @@ void Request::respondToGetCGI(std::string fileName) {
 		char *args[4] = {(char *)"/usr/bin/python3", (char *)(fileName.c_str()),
 						(char *)(querys.c_str()),NULL};
 		execve("/usr/bin/python3", args, getEnvpInArray(_cgiEnv));
-		/*
-		 TEST
+		/* TEST */
 		std::string executionFailed = "<html><body><h1>execution of CGI failed</h1></body></html>";
 		write(1, executionFailed.c_str(), executionFailed.length());
-		*/
-		exit(0);
+		exit(EXIT_FAILURE);
 	}
 	else if (pid > 0)
 	{

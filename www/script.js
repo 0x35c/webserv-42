@@ -9,6 +9,7 @@ var ySpeed = 2 * (Math.random() < 0.5 ? -1 : 1);
 var audio1 = new Audio('https://www.myinstants.com/media/sounds/aughhhhh-aughhhhh.mp3');
 var audio2 = new Audio('https://www.myinstants.com/media/sounds/among-us-role-reveal-sound.mp3');
 var audio3 = new Audio('https://www.myinstants.com/media/sounds/deja-vu.mp3');
+var audio4 = new Audio('https://www.myinstants.com/media/sounds/bonk_7zPAD7C.mp3');
 
 var screamer = document.createElement('img');
 screamer.src = 'averdon.png';
@@ -21,28 +22,24 @@ document.body.style.backgroundImage = 'url("chriscelaya.jpg")';
 addEventListener('resize', function() {
 	xMax = document.body.clientWidth - 200;
 	yMax = document.body.clientHeight - 200;
-	if (x > xMax) {
+	if (x > xMax)
 		x = xMax;
-	}
-	if (y > yMax) {
+	if (y > yMax)
 		y = yMax;
-	}
 	document.body.style.backgroundPositionX = x + 'px';
 	document.body.style.backgroundPositionY = y + window.scrollY + 'px';
 });
 
 addEventListener('scroll', function() {
 	yMax = document.body.clientHeight - 200;
-	if (y > yMax) {
+	if (y > yMax)
 		y = yMax;
-	}
 	this.document.body.style.backgroundPositionY = y + window.scrollY + 'px';
 });
 
 addEventListener('click', function(event) {
-	if (stop) {
+	if (stop || stuck)
 		return;
-	}
 
 	if (event.clientX > x && event.clientX < x + 200 && event.clientY > y && event.clientY < y + 200) {
 		if (document.body.style.backgroundImage == 'url("chriscelaya.jpg")') {
@@ -64,6 +61,10 @@ addEventListener('click', function(event) {
 			ySpeed *= 10;
 			stuck = true;
 		}
+		else if (document.body.style.backgroundImage == 'url("ulayus.png")') {
+			audio4.currentTime = 0.0;
+			audio4.play();
+		}
 	}
 });
 
@@ -83,10 +84,20 @@ audio3.addEventListener('ended', function() {
 	stuck = false;
 });
 
-function move() {
-	if (stop) {
+audio4.addEventListener('ended', function() {
+	if (document.body.style.backgroundImage != 'url("ulayus.png")')
 		return;
-	}
+
+	document.body.style.backgroundSize = '200px 50px';
+	y += 150;
+	if (y > yMax)
+		y = yMax;
+	document.body.style.backgroundPositionY = y + window.scrollY + 'px';
+});
+
+function move() {
+	if (stop)
+		return;
 
 	x += xSpeed;
 	y += ySpeed;
@@ -95,12 +106,14 @@ function move() {
 		xSpeed = -xSpeed;
 		if (!stuck)
 			document.body.style.backgroundImage = 'url("averdon.png")';
+		document.body.style.backgroundSize = '200px 200px';
 	}
 	if (x < 0) {
 		x = 0;
 		xSpeed = -xSpeed;
 		if (!stuck)
 			document.body.style.backgroundImage = 'url("tguerin.png")';
+		document.body.style.backgroundSize = '200px 200px';
 	}
 	if (y > yMax) {
 		y = yMax;
@@ -113,6 +126,7 @@ function move() {
 		ySpeed = -ySpeed;
 		if (!stuck)
 			document.body.style.backgroundImage = 'url("chriscelaya.jpg")';
+		document.body.style.backgroundSize = '200px 200px';
 	}
 	document.body.style.backgroundPositionX = x + 'px';
 	document.body.style.backgroundPositionY = y + window.scrollY + 'px';

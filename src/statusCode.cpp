@@ -81,6 +81,11 @@ int Request::setStatusCode(void) {
 		_requestHeader[HEAD] = "src/405";
 		return (400);
 	}
+	else if (_method == "POST" && _location->acceptUploadedFile == false) {
+		_statusCode = "403 Forbidden";
+		_requestHeader[HEAD] = "src/403";
+		return (400);
+	}
 	else if (_method == "POST" && std::atoll(_requestHeader[CONTENT_LENGTH].c_str()) > _serverConfig.maxFileSizeUpload) {
 		_statusCode = "413 Content Too Large";
 		_requestHeader[HEAD] = "src/413";

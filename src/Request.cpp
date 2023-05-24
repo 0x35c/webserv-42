@@ -123,23 +123,16 @@ void Request::executeCGI(std::string fileName) {
 			|| close(_cgi.fds[1][1]) == -1)
 			throw (Server::ServerException());
 
-		std::string querys;
-		if (_method == "GET")
-			querys = _requestHeader[HEAD].substr(_requestHeader[HEAD].find("?") + 1, std::string::npos);
-		else if (_method == "POST")
-			querys = _requestHeader[BODY];
-		_cgiEnv["QUERY_STRING"] = querys;
+		if (_method == "POST")
+			_query = _requestHeader[BODY];
+		_cgiEnv["QUERY_STRING"] = _query;
 		char *args[4] = {(char *)"/usr/bin/python3", (char *)(fileName.c_str()),
-						(char *)(querys.c_str()),NULL};
+						(char *)(_query.c_str()),NULL};
 		char **EnvpVariables = getEnvpInArray(_cgiEnv);
 		execve("/usr/bin/python3", args, EnvpVariables);
-		/* TEST */
-		std::string executionFailed = "<html><body><h1>execution of CGI failed</h1></body></html>";
 		for (size_t i = 0; EnvpVariables[i]; i++)
 			delete EnvpVariables[i];
 		delete [] EnvpVariables;
-		if (write(1, executionFailed.c_str(), executionFailed.length()) < 0)
-			throw (Server::ServerException());
 		exit(EXIT_FAILURE);
 	}
 	else if (pid != 0)

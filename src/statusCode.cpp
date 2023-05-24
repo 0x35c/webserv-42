@@ -91,8 +91,14 @@ int Request::setStatusCode(void) {
 		_requestHeader[HEAD] = "src/404";
 		return (400);
 	}
-	else if (_method == "GET" && _isDirectory == true)
+	else if (_method == "GET" && _isDirectory == true) {
 		_statusCode = handleDirectoryCode(_requestHeader);
+		if (_location->directoryListing == false) {
+			_statusCode = "403 Forbidden";
+			_requestHeader[HEAD] = "src/403";
+			return (400);
+		}
+	}
 	else if (_method == "POST" && _validRequest == false) {
 		_statusCode = "400 Bad Request";
 		_requestHeader[HEAD] = "src/400";

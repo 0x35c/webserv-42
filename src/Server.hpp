@@ -50,4 +50,5 @@ class Server {
 
 		void _acceptConnection(int socketFd, const t_server& serverConfig);
 		bool _processRequest(int clientFd, Request &request);
+		void checkCGI(void);
 };

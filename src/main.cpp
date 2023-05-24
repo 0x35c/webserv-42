@@ -6,18 +6,16 @@
 #include "Server.hpp"
 #include "parsing/parsing.hpp"
 
-char **g_env;
 void signal_handler(int signum)
 {
 	(void)signum;
 	throw std::runtime_error("SIGINT received");
 }
 
-int	main(int argc, char **argv, char **envp)
+int	main(int argc, char **argv)
 {
 	signal(SIGINT, signal_handler);
 	
-	g_env =  envp;
 	std::vector<t_server> serverConfigFile;
 	try
 	{

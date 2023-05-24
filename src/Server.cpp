@@ -48,6 +48,21 @@ Server &Server::operator=(Server const &other)
 
 Server::~Server()
 {
+	for (requestMap::iterator it = _requests.begin(); it != _requests.end(); )
+	{
+		if (it->second.getCGI().inCGI == true)
+		{
+			close(it->second.getCGI().fds[1][0]);
+			kill(it->second.getCGI().pid, SIGKILL);
+			/*
+			if (close(it->second.getCGI().fds[1][0]) == -1)
+				throw (ServerException());
+			if (kill(it->second.getCGI().pid, SIGKILL) < 0)
+				throw (ServerException());
+			*/
+		}
+		it++;
+	}
 	for (socketMap::iterator it = _sockets.begin(); it != _sockets.end(); ++it)
 		close(it->first);
 	for (requestMap::iterator it = _requests.begin(); it != _requests.end(); ++it)

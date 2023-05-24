@@ -105,15 +105,10 @@ static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv) {
 	return (arrayEnvpVariable);
 }
 
-// Function is working but we might need to change it 
-// to make the read() syscall go through select()
 void Request::executeCGI(std::string fileName) {
 	initializeEnvpCGI();
 	_cgiEnv["SCRIPT_NAME"] = fileName;
 	_cgiEnv["URL"] = fileName;
-	/* TO-DO LIST
-	 * need to save the pid to kill it if we do a ctrl C during the loading of the CGI
-	*/
 	if (pipe(_cgi.fds[0]) == -1
 		|| pipe(_cgi.fds[1]) == -1)
 		throw (Server::ServerException());

@@ -8,17 +8,22 @@
 #include <sstream>
 #include <unistd.h>
 #include <iostream>
-#include <arpa/inet.h>
 #include <cstdlib>
 #include <vector>
+#include "parsing/parsing.hpp"
 
+#define BUFFER_SIZE 8192
+#define DEBUG 1
 typedef std::map<int, std::string> strMap;
 typedef std::pair<int, std::string> strPair;
 
-#define BUFFER_SIZE 8192
-#define DEBUG 0
+enum methods {
+	GET = 0,
+	POST,
+	DELETE
+};
 
-enum attributes {
+enum headerAttributes {
 	BODY,
 	HEAD,
 	HOST,
@@ -53,31 +58,34 @@ typedef struct s_cgi {
 class Request {
 	public:
 		Request(void);
-		Request(int clientfd);
+		Request(int clientfd, const t_server& serverConfig);
 		Request(const Request& other);
 		Request& operator=(const Request& other);
 		~Request(void);
 
 		// Public member functions
-		bool readRequest(std::string const &rawRequest);
+		bool readRequest(std::string const& rawRequest);
 		void respondToRequest(void);
 
 		int getClientfd(void) const;
-		t_cgi & getCGI(void);
+		const std::string& getStatusCode(void) const;
+		t_cgi& getCGI(void);
 
 	// Private member functions
 	private:
 		void respondToGetRequest(void);
-		void respondToGetCGI(std::string fileName);
 		void respondToPostRequest(void);
-		void respondToPostCGI(std::string fileName);
 		void respondToDeleteRequest(void);
+		void sendErrorResponse(void);
 		void errorOnRequest(void);
 		void processLine(std::string line, int lineToken);
 		void parseHeader(const std::string& request);
 		bool parseBody(const std::string& buffer);
 		int setStatusCode(void);
+		int getLineToken(std::string line);
+		const std::string getMethod(std::string buffer);
 		void directoryListing(DIR* directory, const std::string& dirName);
+		void executeCGI(std::string fileName);
 		void initializeEnvpCGI(void);
 		bool parseChunkedBody(const std::string& buffer);
 
@@ -93,4 +101,6 @@ class Request {
 		bool _validRequest;
 		std::map<std::string, std::string> _cgiEnv;
 		t_cgi _cgi;
+		t_server _serverConfig;
+		t_location* _location;
 };

@@ -1,6 +1,8 @@
 #include <string>
 
 #include "Request.hpp"
+#include <vector>
+#include <algorithm>
 
 void trimString(std::string& string, const char* charset);
 static std::string getToken(const std::string& str, char sep, int pos){
@@ -9,8 +11,7 @@ static std::string getToken(const std::string& str, char sep, int pos){
 
 	cur_pos = 1;
 	for (uint64_t i = 0; i < str.size(); i++) {
-		if (str[i] == sep)	
-		{
+		if (str[i] == sep)	{
 			if (cur_pos == pos)
 				break;
 			token.clear();
@@ -37,34 +38,39 @@ static std::string getExtension(const std::string& fileName) {
 void Request::processLine(std::string line, int lineToken) {
 	std::string str = getToken(line, ' ', 2);
 	int pos = str.find('\r');
-	std::string root = "www";
+	std::string root = _location->root;
+	std::string index = _location->index;
 	if (pos > 0)
 		str.erase(pos, 1);
 	switch (lineToken) {
 		case HEAD:
 			{
 				str.erase(0, 1);
+				std::string rawRoot = root;
+				rawRoot.erase(rawRoot.length() - 1, 1);
 #if DEBUG
-				std::cout << str << "\n";
+				std::cout << "File name: " << str << "\n";
 #endif
 				if (line.find("HTTP/1.1") != std::string::npos)
 					_validRequest = true;
 				else
 					_validRequest = false;
-				if (_method == "GET" && str.find(root) == std::string::npos) {
+				if (_method == "GET" && str.find(rawRoot) == std::string::npos) {
 					if (str.length() == 0)
-						_requestHeader.insert(strPair(HEAD, root + "/index.html"));
+						_requestHeader[HEAD] = root + index;
+						/* _requestHeader.insert(strPair(HEAD, root + index)); */
 					else
-						_requestHeader.insert(strPair(HEAD, root + "/" + str));
+						_requestHeader[HEAD] = root + str;
+						/* _requestHeader.insert(strPair(HEAD, root + str)); */
 				}
-				else if (_method == "GET" && str.find(root) != std::string::npos) {
-					_requestHeader.insert(strPair(HEAD, str));
+				else if (_method == "GET" && str.find(rawRoot) != std::string::npos) {
+					_requestHeader[HEAD] = str;
+					/*_requestHeader[HEAD].insert(strPair(HEAD, str)); */
+					/* std::cout << "HEAD in processLine: " << _requestHeader[HEAD] << std::endl; */
 				}
-				else if (_method == "POST" && str == "/")
-					_requestHeader.insert(strPair(HEAD, "www/uploads/default"));
 				else if (_method == "POST") {
 					str.erase(0, 1);
-					_requestHeader.insert(strPair(HEAD, str));
+					_requestHeader[HEAD] = str;
 				}
 			}
 			break;
@@ -85,9 +91,25 @@ void Request::processLine(std::string line, int lineToken) {
 		_requestHeader.insert(strPair(lineToken, str));
 }
 
-static int getLineToken(std::string line) {
-	if (line.find("POST") != std::string::npos || line.find("GET") != std::string::npos || line.find("DELETE") != std::string::npos)
+static t_location* getLocation(const std::string& path, std::vector<t_location>& locations) {
+	for (std::vector<t_location>::iterator it = locations.begin(); it != locations.end(); it++) {
+		if (path == it->locationPath)
+			return (&(*it));
+	}
+	return (&(*locations.begin()));
+}
+
+int Request::getLineToken(std::string line) {
+	if (line.find("POST") != std::string::npos || line.find("GET") != std::string::npos || line.find("DELETE") != std::string::npos) {
+		std::string path = getToken(line, ' ', 2);
+		size_t pos = path.find("/", 1);
+		if (pos != std::string::npos && closedir(opendir(_requestHeader[HEAD].c_str())) == -1)
+			path = path.substr(0, pos);
+		else
+			path = "/";
+		_location = getLocation(path, _serverConfig.locations);
 		return (HEAD);
+	}
 	else if (line.find("Host:") != std::string::npos)
 		return (HOST);
 	else if (line.find("User-Agent:") != std::string::npos)
@@ -115,7 +137,7 @@ static void processBody(std::string& boundary, std::string& line, strMap& reques
 	int i = 1;
 	std::string str = getToken(line, '\n', i);
 	trimString(str, "-\r");
-	if (str == boundary) {
+	if (!boundary.empty() && str == boundary) {
 		i++;
 		while (i < 4) {
 			str = getToken(line, '\n', i);
@@ -159,7 +181,10 @@ void Request::parseHeader(const std::string& buffer) {
 			i++;
 		}
 		if (line == "\r")
+		{
+			//std::cout << buffer;
 			break ;
+		}
 		lineToken = getLineToken(line);
 		processLine(line, lineToken);
 		line.clear();
@@ -219,11 +244,11 @@ bool Request::parseBody(const std::string& buffer) {
 void Request::respondToRequest(void) {
 	if (_method == "GET")
 		respondToGetRequest();	
-	else if ("POST") {
+	else if (_method == "POST") {
 		processBody(_boundary, _requestHeader[BODY], _requestHeader);
 		respondToPostRequest();	
 	}
-	else if ("DELETE")
+	else if (_method == "DELETE")
 		respondToDeleteRequest();	
 	_requestHeader.clear();
 }

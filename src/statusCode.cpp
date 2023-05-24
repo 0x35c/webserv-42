@@ -66,7 +66,27 @@ int Request::setStatusCode(void) {
 #if DEBUG
 	std::cout << _requestHeader[HEAD] << std::endl;
 #endif
-	if (!file && _method != "POST") {
+	if (_method == "GET" && _location->methodsAllowed[GET] == false) {
+		_statusCode = "405 Method Not Allowed";
+		_requestHeader[HEAD] = "src/405";
+		return (400);
+	}
+	else if (_method == "POST" && _location->methodsAllowed[POST] == false) {
+		_statusCode = "405 Method Not Allowed";
+		_requestHeader[HEAD] = "src/405";
+		return (400);
+	}
+	else if (_method == "DELETE" && _location->methodsAllowed[DELETE] == false) {
+		_statusCode = "405 Method Not Allowed";
+		_requestHeader[HEAD] = "src/405";
+		return (400);
+	}
+	else if (_method == "POST" && std::atoll(_requestHeader[CONTENT_LENGTH].c_str()) > _serverConfig.maxFileSizeUpload) {
+		_statusCode = "413 Content Too Large";
+		_requestHeader[HEAD] = "src/413";
+		return (400);
+	}
+	else if (!file && _method != "POST") {
 		_statusCode = "404 Not Found";
 		_requestHeader[HEAD] = "src/404";
 		return (400);

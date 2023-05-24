@@ -1,22 +1,21 @@
 #include <iostream>
 #include <csignal>
 #include <cstdlib>
+#include <vector>
 
 #include "Server.hpp"
 #include "parsing/parsing.hpp"
 
-char **g_env;
 void signal_handler(int signum)
 {
 	(void)signum;
 	throw std::runtime_error("SIGINT received");
 }
 
-int	main(int argc, char **argv, char **envp)
+int	main(int argc, char **argv)
 {
 	signal(SIGINT, signal_handler);
 	
-	g_env =  envp;
 	std::vector<t_server> serverConfigFile;
 	try
 	{
@@ -33,8 +32,8 @@ int	main(int argc, char **argv, char **envp)
 	Server server;
 	try
 	{
-		for (size_t i = 0; i < serverConfigFile.size(); i++)
-			server.addAddress(serverConfigFile[i].host, serverConfigFile[i].port);
+		for (std::vector<t_server>::iterator it = serverConfigFile.begin(); it != serverConfigFile.end(); ++it)
+			server.addAddress(*it);
 		server.start();
 	}
 	catch(const std::exception& e)
@@ -42,6 +41,5 @@ int	main(int argc, char **argv, char **envp)
 		std::cerr << e.what() << '\n';
 		return EXIT_FAILURE;
 	}
-
 	return EXIT_SUCCESS;
 }

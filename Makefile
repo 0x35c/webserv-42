@@ -14,7 +14,7 @@ SRCS	:= main.cpp\
 		   parsing/utils.cpp\
 
 CC 		:= g++
-CFLAGS  := -Wall -Wextra -Werror -std=c++98 -g -MMD
+CFLAGS  := -Wall -Wextra -std=c++98 -g -MMD
 OBJS    := $(addprefix objs/, $(SRCS:.cpp=.o))
 
 all: $(NAME)
@@ -23,7 +23,7 @@ run: all
 	./${NAME} conf/easy.conf
 
 vg: all
-	valgrind --track-fds=yes --show-leak-kinds=all --leak-check=full ./${NAME} conf/easy.conf
+	valgrind -s --track-fds=yes --show-leak-kinds=all --leak-check=full ./${NAME} conf/easy.conf
 
 $(NAME): $(OBJS)
 	$(CC) -o $(NAME) $(OBJS)

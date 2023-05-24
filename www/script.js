@@ -41,7 +41,7 @@ function move() {
 		document.body.style.backgroundImage = "url('chriscelaya.jpg')";
 	}
 	document.body.style.backgroundPositionX = x + "px";
-	document.body.style.backgroundPositionY = y + "px";
+	document.body.style.backgroundPositionY = y + window.scrollY + "px";
 }
 
 setInterval(move, 10);

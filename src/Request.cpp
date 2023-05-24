@@ -3,21 +3,22 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <ctime>
-
-
-//static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv);
+#include "Server.hpp"
+static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv);
 
 Request::Request(void)
 	: _clientfd(-1), _method("NTM")
 {}
 
-Request::Request(int clientfd)
-	: _clientfd(clientfd), _method("NTM")
+Request::Request(int clientfd, const t_server& serverConfig)
+	: _clientfd(clientfd), _method("NTM"), _serverConfig(serverConfig)
 {}
+
 Request::Request(const Request& other)
 	: _clientfd(other._clientfd), _method(other._method), _statusCode(other._statusCode),
 		_boundary(other._boundary), _query(other._query),
-		_requestHeader(other._requestHeader), _isDirectory(other._isDirectory)
+		_requestHeader(other._requestHeader), _isDirectory(other._isDirectory),
+		_serverConfig(other._serverConfig)
 {}
 
 Request&	Request::operator=(const Request& other) {
@@ -29,6 +30,7 @@ Request&	Request::operator=(const Request& other) {
 		_query = other._query;
 		_requestHeader = other._requestHeader;
 		_isDirectory = other._isDirectory;
+		_serverConfig = other._serverConfig;
 	}
 	return *this;
 }
@@ -59,72 +61,104 @@ static void getQuery(std::string& query, const std::string& name) {
 		query = name.substr(delimiter + 1);
 }
 
+void Request::sendErrorResponse(void) {
+	std::ifstream file(_requestHeader[HEAD].c_str());
+
+	file.seekg(0, std::ios::end);
+	std::streampos fileSize = file.tellg();
+	file.seekg(0, std::ios::beg);
+
+	std::ostringstream ss;
+	ss << "HTTP/1.1 " << _statusCode << "\r\n";
+	ss << "Content-type: text/html\r\n";
+	ss << "Content-Length: " << fileSize << "\r\n\r\n";
+	ss << file.rdbuf();
+	send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
+}
+
 void Request::initializeEnvpCGI(void) {
 	_cgiEnv["SERVER_SOFTWARE"] = "BOZOSERVER/2.0";
-	_cgiEnv["SERVER_NAME"] = "BOZO"; // parsing
-	_cgiEnv["SERVER_PORT"] = "8080"; // parsing
+	_cgiEnv["SERVER_NAME"] = _serverConfig.server_name;
+	_cgiEnv["SERVER_PORT"] = _serverConfig.port;
 	_cgiEnv["SERVER_PROTOCOL"] = "HTTP/1.1";
 	_cgiEnv["REQUEST_METHOD"] = _method;
 	_cgiEnv["GATEWAY_INTERFACE"] = "CGI/1.1";
 	_cgiEnv["CONTENT_TYPE"] = _requestHeader[CONTENT_TYPE];
 	_cgiEnv["CONTENT_LENGTH"] = _requestHeader[CONTENT_LENGTH];
-	_cgiEnv["REMOTE_ADDR"] = "0.0.0.0"; // parsing
-	_cgiEnv["PATH"] = "www/"; // parsing
+	_cgiEnv["REMOTE_ADDR"] = "0.0.0.0";
+	_cgiEnv["PATH"] = _location->root;
 	_cgiEnv["HTTP_USER_AGENT"] = _requestHeader[USER_AGENT];
 }
 
-/*
 static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv) {
-	char **arrayEnvpVariable =  new char *[_cgiEnv.size()];
+	char **arrayEnvpVariable =  new char *[_cgiEnv.size() + 1];
 	int i = 0;
-	std::string tmp;
+	std::string *tmp;
 	std::map<std::string, std::string>::iterator it;
 	for (it = _cgiEnv.begin(); it != _cgiEnv.end(); it++) {
-		tmp = it->first + "=" + it->second;
-		arrayEnvpVariable[i] = (char *)tmp.c_str();
+		tmp = new std::string;
+		*tmp = it->first + "=" + it->second + "\0";
+		arrayEnvpVariable[i] = (char *)tmp->c_str();
 		i++;
 	}
+	arrayEnvpVariable[i] = NULL;
 	return (arrayEnvpVariable);
 }
-*/
-// Function is working but we might need to change it 
-// to make the read() syscall go through select()
-void Request::respondToGetCGI(std::string fileName) {
+
+void Request::executeCGI(std::string fileName) {
 	initializeEnvpCGI();
 	_cgiEnv["SCRIPT_NAME"] = fileName;
 	_cgiEnv["URL"] = fileName;
-	/* TO-DO LIST
-	 * need to save the pid to kill it if we do a ctrl C during the loading of the CGI
-	 * change the envp variables of execve to the good one
-	 * check return of functions (pipe, dup2, close, read, send, kill)
-	*/
-	pipe(_cgi.fds[0]);
-	pipe(_cgi.fds[1]);
+	if (pipe(_cgi.fds[0]) == -1
+		|| pipe(_cgi.fds[1]) == -1)
+		throw (Server::ServerException());
 	int pid = fork();
 	if (pid == 0)
 	{
-		dup2(_cgi.fds[0][0], 0);
-		dup2(_cgi.fds[1][1], 1);
-		close(_cgi.fds[0][0]);
-		close(_cgi.fds[0][1]);
-		close(_cgi.fds[1][0]);
-		close(_cgi.fds[1][1]);
+		if (dup2(_cgi.fds[0][0], 0) == -1
+			|| dup2(_cgi.fds[1][1], 1) == -1
+			|| close(_cgi.fds[0][0]) == -1
+			|| close(_cgi.fds[0][1]) == -1
+			|| close(_cgi.fds[1][0]) == -1
+			|| close(_cgi.fds[1][1]) == -1)
+			throw (Server::ServerException());
 
-		std::string querys = _requestHeader[HEAD].substr(_requestHeader[HEAD].find("?") + 1, std::string::npos);
+		std::string querys;
+		if (_method == "GET")
+			querys = _requestHeader[HEAD].substr(_requestHeader[HEAD].find("?") + 1, std::string::npos);
+		else if (_method == "POST")
+			querys = _requestHeader[BODY];
 		_cgiEnv["QUERY_STRING"] = querys;
 		char *args[4] = {(char *)"/usr/bin/python3", (char *)(fileName.c_str()),
 						(char *)(querys.c_str()),NULL};
-		//execve("/usr/bin/python3", args, getEnvpInArray(_cgiEnv));
-		execve("/usr/bin/python3", args, NULL);
-		exit(0);
+		char **EnvpVariables = getEnvpInArray(_cgiEnv);
+		execve("/usr/bin/python3", args, EnvpVariables);
+		/* TEST */
+		std::string executionFailed = "<html><body><h1>execution of CGI failed</h1></body></html>";
+		for (size_t i = 0; EnvpVariables[i]; i++)
+			delete EnvpVariables[i];
+		delete [] EnvpVariables;
+		if (write(1, executionFailed.c_str(), executionFailed.length()) < 0)
+			throw (Server::ServerException());
+		exit(EXIT_FAILURE);
 	}
-	else if (pid > 0)
+	else if (pid != 0)
 	{
-		_cgi.pid = pid;
-		_cgi.begin_time = std::time(NULL);
-		close(_cgi.fds[0][0]);
-		close(_cgi.fds[0][1]);
-		close(_cgi.fds[1][1]);
+		if (close(_cgi.fds[0][0]) == -1
+			|| close(_cgi.fds[0][1]) == -1
+			|| close(_cgi.fds[1][1]) == -1)
+			throw (Server::ServerException());
+		if (pid > 0)
+		{
+			_cgi.pid = pid;
+			_cgi.begin_time = std::time(NULL);
+		}
+		else if (pid < 0)
+		{
+			_cgi.inCGI = false;
+			if (close(_cgi.fds[1][0]) == -1)
+				throw (Server::ServerException());
+		}
 	}
 }
 
@@ -133,6 +167,7 @@ void Request::respondToGetRequest(void) {
 	getQuery(_query, _requestHeader[HEAD]);
 #if DEBUG
 	std::cout << "ORIGIN: " << _requestHeader[ORIGIN] << std::endl;
+	std::cout << "FILENAME: " << _requestHeader[HEAD] << std::endl;
 	std::cout << _query << std::endl;
 #endif
 	DIR* directory = opendir(_requestHeader[HEAD].c_str());
@@ -140,13 +175,13 @@ void Request::respondToGetRequest(void) {
 	_cgi.inCGI = false;
 	if (directory == NULL) {
 		std::string fileName = _requestHeader[HEAD].substr(0, _requestHeader[HEAD].find("?"));
-		if (fileName.substr(fileName.length() - 3) == ".py") {
+		if (fileName.length() > 3 && fileName.substr(fileName.length() - 3) == ".py") {
 			_cgi.inCGI = true;
-			respondToGetCGI(fileName);
+			executeCGI(fileName);
 		}
-		else
-		{
-			setStatusCode();
+		else {
+			if (setStatusCode() == 400)
+				return (sendErrorResponse());
 			std::ifstream file(_requestHeader[HEAD].c_str(), std::ios::in | std::ios::binary);
 
 			file.seekg(0, std::ios::end);
@@ -167,21 +202,29 @@ void Request::respondToGetRequest(void) {
 	}
 	else {
 		_isDirectory = true;
-		setStatusCode();
+		if (setStatusCode() == 400)
+			return (sendErrorResponse());
 		directoryListing(directory, _requestHeader[HEAD]);
 	}
 }
 
-void Request::respondToPostCGI(std::string fileName) {
-	(void)fileName;
-}
-
 void Request::respondToPostRequest(void) {
 	int statusCode = setStatusCode();
+	if (statusCode == 400)
+		return (sendErrorResponse());
 
+	_cgi.inCGI = false;
+	std::string fileName = _requestHeader[HEAD].substr(0, _requestHeader[HEAD].find("?"));
+	std::cout << "FILENAME POST CGI: " << fileName << std::endl;
+	if (fileName.length() > 3 && fileName.substr(fileName.length() - 3) == ".py") {
+		_cgi.inCGI = true;
+		executeCGI("www/c" + _requestHeader[HEAD]); // need to correct this
+		return ;
+	}
 	std::ostringstream ss;
-	if (_requestHeader[HEAD] != "")
+	if (_requestHeader[HEAD] != "") {
 		_statusCode = "302 Redirect";
+	}
 	ss << "HTTP/1.1 " << _statusCode << "\r\n";
 	ss << "Content-type: " << _requestHeader[ACCEPT] << "\r\n";
 	if (_statusCode == "302 Redirect")
@@ -210,14 +253,14 @@ void Request::respondToDeleteRequest(void) {
 	file.close();
 }
 
-static const std::string getMethod(std::string buffer) {
+const std::string Request::getMethod(std::string buffer) {
 	if (buffer.find("GET") != std::string::npos)
 		return ("GET");
 	else if (buffer.find("POST") != std::string::npos)
 		return ("POST");
 	else if (buffer.find("DELETE") != std::string::npos)
 		return ("DELETE");
-	return ("ERROR");
+	return ("FORBIDDEN");
 }
 
 bool Request::readRequest(std::string const &rawRequest) {
@@ -225,6 +268,11 @@ bool Request::readRequest(std::string const &rawRequest) {
 	if (headerRead == false) {
 		_method = getMethod(rawRequest);
 		parseHeader(rawRequest);
+		if (_method == "POST" && _boundary.empty())
+		{
+			headerRead = false;
+			return (true);
+		}
 		std::string tmpHeader = rawRequest.substr(0, rawRequest.find("\r\n\r\n"));
 		std::string tmpBodyHeader = rawRequest.substr(rawRequest.find("\r\n\r\n") + 4, std::string::npos);
 		tmpBodyHeader = tmpBodyHeader.substr(0, tmpBodyHeader.find("\r\n\r\n"));
@@ -254,6 +302,10 @@ int Request::getClientfd(void) const {
 	return (_clientfd);
 }
 
-t_cgi & Request::getCGI(void) {
+t_cgi& Request::getCGI(void) {
 	return (_cgi);
+}
+
+const std::string& Request::getStatusCode(void) const {
+	return (_statusCode);
 }

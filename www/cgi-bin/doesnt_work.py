@@ -4,6 +4,8 @@ cgitb.enable()
 
 
 def main() -> None:
+    print("Content-Type: text/html")
+    print()
     x = "salut";
     while x > 0:
         print(x)

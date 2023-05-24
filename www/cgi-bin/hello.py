@@ -30,6 +30,8 @@ SUCCESS = """\
 def main() -> None:
     form = cgi.FieldStorage()
 
+    print("Content-Type: text/html")
+    print()
     if "name" not in form or "addr" not in form:
         print(HTML.format(ERROR))
     else:

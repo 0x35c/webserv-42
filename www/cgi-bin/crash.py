@@ -4,6 +4,8 @@ cgitb.enable()
 
 
 def main() -> None:
+    print("Content-Type: text/html")
+    print()
     array = [0, 0]
     print(array[2])
 

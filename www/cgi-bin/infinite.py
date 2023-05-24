@@ -4,7 +4,9 @@ cgitb.enable()
 
 
 def main() -> None:
-    x = 1;
+    print("Content-Type: text/html")
+    print()
+    x = 1
     while x > 0:
         print(x)
 

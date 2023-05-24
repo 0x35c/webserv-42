@@ -65,47 +65,51 @@ Server::~Server()
 
 void Server::checkCGI(void)
 {
-	for (requestMap::iterator it = _requests.begin(); it != _requests.end(); )
+	for (requestMap::iterator it = _requests.begin(); it != _requests.end(); it++)
 	{
-		if (it->second.getCGI().inCGI == true)
+		if (it->second.getCGI().inCGI == false)
+			continue ;
+		std::ostringstream ss;
+		bool stopCGI = false;
+		if (std::time(NULL) - it->second.getCGI().begin_time > TIMEOUT_CGI)
 		{
-			std::ostringstream ss;
-			bool stopCGI = false;
-			if (std::time(NULL) - it->second.getCGI().begin_time > TIMEOUT_CGI)
-			{
-				stopCGI = true;
-				if (kill(it->second.getCGI().pid, SIGKILL) < 0)
-					throw (ServerException());
-				std::string InfiniteLoopHTML = "<html><body><h1>Infinite loop in CGI</h1></body></html>";
-				ss << "HTTP/1.1 508 Loop Detected\r\n";
-				ss << "Content-type: text/html\r\n";
-				ss << "Content-Length: " << InfiniteLoopHTML.size() << "\r\n\r\n";
-				ss << InfiniteLoopHTML;
-			}
-			else if (waitpid(it->second.getCGI().pid, NULL, WNOHANG) > 0)
-			{
-				stopCGI = true;
-				char buffer[BUFFER_SIZE] = {0};
-				int fileSize = read(it->second.getCGI().fds[1][0], buffer, BUFFER_SIZE);
-				if (fileSize < 0)
-					throw (ServerException());
-				ss << "HTTP/1.1 " << it->second.getStatusCode() << "\r\n";
-				ss << "Content-type: text/html\r\n";
-				ss << "Content-Length: " << fileSize << "\r\n\r\n";
-				ss << buffer;
-			}
-			if (stopCGI)
-			{
-				if (close(it->second.getCGI().fds[1][0]) == -1)
-					throw (ServerException());
-				it->second.getCGI().inCGI = false;
-				if (write(it->second.getClientfd(), ss.str().c_str(), ss.str().size()) < 0)
-					throw (ServerException());
-				ss.str("");
-				ss.clear();
-			}
+			stopCGI = true;
+			if (kill(it->second.getCGI().pid, SIGKILL) < 0)
+				throw (ServerException());
+			std::string InfiniteLoopHTML = "<html><body><h1>Infinite loop in CGI</h1></body></html>";
+			ss << "HTTP/1.1 508 Loop Detected\r\n";
+			ss << "Content-type: text/html\r\n";
+			ss << "Content-Length: " << InfiniteLoopHTML.size() << "\r\n\r\n";
+			ss << InfiniteLoopHTML;
 		}
-		it++;
+		else if (waitpid(it->second.getCGI().pid, NULL, WNOHANG) > 0)
+		{
+			stopCGI = true;
+			char buffer[BUFFER_SIZE] = {0};
+			int fileSize = read(it->second.getCGI().fds[1][0], buffer, BUFFER_SIZE);
+			if (fileSize < 0)
+				throw (ServerException());
+			std::string responseCGI = buffer;
+			if (responseCGI.empty())
+				responseCGI = "Content-type: text/html\n\n<html><body><h1>execution of CGI failed</h1></body></html>";
+			std::string tmpHeader = responseCGI.substr(0, responseCGI.find("\n\n") + 1);
+			std::string tmpBody = responseCGI.substr(responseCGI.find("\n\n") + 2, std::string::npos);
+			size_t contentLength = tmpBody.length(); 
+			ss << "HTTP/1.1 " << it->second.getStatusCode() << "\r\n";
+			ss << tmpHeader;
+			ss << "Content-Length: " << contentLength << "\r\n\r\n";
+			ss << tmpBody;
+		}
+		if (stopCGI)
+		{
+			if (close(it->second.getCGI().fds[1][0]) == -1)
+				throw (ServerException());
+			it->second.getCGI().inCGI = false;
+			if (write(it->second.getClientfd(), ss.str().c_str(), ss.str().size()) < 0)
+				throw (ServerException());
+			ss.str("");
+			ss.clear();
+		}
 	}
 }
 

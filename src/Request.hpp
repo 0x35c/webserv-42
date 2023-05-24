@@ -39,7 +39,8 @@ enum attributes {
 	SEC_FETCH_SITE,
 	SEC_FETCH_USER,
 	PRAGMA,
-	CACHE_CONTROL
+	CACHE_CONTROL,
+	TRANSFER_ENCODING
 };
 
 typedef struct s_cgi {
@@ -78,6 +79,7 @@ class Request {
 		int setStatusCode(void);
 		void directoryListing(DIR* directory, const std::string& dirName);
 		void initializeEnvpCGI(void);
+		bool parseChunkedBody(const std::string& buffer);
 
 	// Private member attributes
 	private:

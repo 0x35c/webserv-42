@@ -8,8 +8,13 @@ var ySpeed = 2 * (Math.random() < 0.5 ? -1 : 1);
 
 var audio1 = new Audio('https://www.myinstants.com/media/sounds/aughhhhh-aughhhhh.mp3');
 var audio2 = new Audio('https://www.myinstants.com/media/sounds/among-us-role-reveal-sound.mp3');
+var audio3 = new Audio('https://www.myinstants.com/media/sounds/deja-vu.mp3');
+
+var screamer = document.createElement('img');
+screamer.src = 'averdon.png';
 
 var stop = false;
+var stuck = false;
 
 document.body.style.backgroundImage = 'url("chriscelaya.jpg")';
 
@@ -49,10 +54,15 @@ addEventListener('click', function(event) {
 		else if (document.body.style.backgroundImage == 'url("averdon.png")') {
 			audio2.currentTime = 0.5;
 			audio2.play();
-			document.body.style.transition = 'all 0.5s';
-			document.body.style.backgroundPosition = 'center';
-			document.body.style.backgroundSize = 'cover';
+			document.body.appendChild(screamer);
 			stop = true;
+		}
+		else if (document.body.style.backgroundImage == 'url("tguerin.png")') {
+			audio3.currentTime = 0.5;
+			audio3.play();
+			xSpeed *= 10;
+			ySpeed *= 10;
+			stuck = true;
 		}
 	}
 });
@@ -63,9 +73,14 @@ audio1.addEventListener('ended', function() {
 });
 
 audio2.addEventListener('ended', function() {
-	document.body.style.transition = '';
-	document.body.style.backgroundSize = 'auto';
+	screamer.remove();
 	stop = false;
+});
+
+audio3.addEventListener('ended', function() {
+	xSpeed /= 10;
+	ySpeed /= 10;
+	stuck = false;
 });
 
 function move() {
@@ -78,22 +93,26 @@ function move() {
 	if (x > xMax) {
 		x = xMax;
 		xSpeed = -xSpeed;
-		document.body.style.backgroundImage = 'url("averdon.png")';
+		if (!stuck)
+			document.body.style.backgroundImage = 'url("averdon.png")';
 	}
 	if (x < 0) {
 		x = 0;
 		xSpeed = -xSpeed;
-		document.body.style.backgroundImage = 'url("tguerin.png")';
+		if (!stuck)
+			document.body.style.backgroundImage = 'url("tguerin.png")';
 	}
 	if (y > yMax) {
 		y = yMax;
 		ySpeed = -ySpeed;
-		document.body.style.backgroundImage = 'url("ulayus.png")';
+		if (!stuck)
+			document.body.style.backgroundImage = 'url("ulayus.png")';
 	}
 	if (y < 0) {
 		y = 0;
 		ySpeed = -ySpeed;
-		document.body.style.backgroundImage = 'url("chriscelaya.jpg")';
+		if (!stuck)
+			document.body.style.backgroundImage = 'url("chriscelaya.jpg")';
 	}
 	document.body.style.backgroundPositionX = x + 'px';
 	document.body.style.backgroundPositionY = y + window.scrollY + 'px';

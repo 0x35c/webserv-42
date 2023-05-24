@@ -50,8 +50,7 @@ addEventListener('click', function(event) {
 			audio2.currentTime = 0.5;
 			audio2.play();
 			document.body.style.transition = 'all 0.5s';
-			document.body.style.backgroundPositionX = '0px';
-			document.body.style.backgroundPositionY = '0px';
+			document.body.style.backgroundPosition = 'center';
 			document.body.style.backgroundSize = 'cover';
 			stop = true;
 		}

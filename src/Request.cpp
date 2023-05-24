@@ -217,7 +217,8 @@ void Request::respondToPostRequest(void) {
 
 	_cgi.inCGI = false;
 	std::string fileName = _requestHeader[HEAD].substr(0, _requestHeader[HEAD].find("?"));
-	if (fileName.substr(fileName.length() - 3) == ".py") {
+	std::cout << "FILENAME POST CGI: " << fileName << std::endl;
+	if (fileName.length() > 3 && fileName.substr(fileName.length() - 3) == ".py") {
 		_cgi.inCGI = true;
 		respondToPostCGI("www/c" + _requestHeader[HEAD]); // need to correct this
 		return ;

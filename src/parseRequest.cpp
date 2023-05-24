@@ -36,13 +36,20 @@ static std::string getExtension(const std::string& fileName) {
 void Request::processLine(std::string line, int lineToken) {
 	std::string str = getToken(line, ' ', 2);
 	int pos = str.find('\r');
-	std::string root = "www"; // parsing
+	std::string root = "www/";
+	std::string index = "index.html";
+	if (_location != NULL) {
+		root = _location->root;
+		index = _location->index;
+	}
 	if (pos > 0)
 		str.erase(pos, 1);
 	switch (lineToken) {
 		case HEAD:
 			{
 				str.erase(0, 1);
+				std::string rawRoot = root;
+				rawRoot.erase(rawRoot.length() - 1, 1);
 #if DEBUG
 				std::cout << "File name: " << str << "\n";
 #endif
@@ -50,18 +57,22 @@ void Request::processLine(std::string line, int lineToken) {
 					_validRequest = true;
 				else
 					_validRequest = false;
-				if (_method == "GET" && str.find(root) == std::string::npos) {
+				if (_method == "GET" && str.find(rawRoot) == std::string::npos) {
 					if (str.length() == 0)
-						_requestHeader.insert(strPair(HEAD, root + "/index.html")); // parsing
+						_requestHeader[HEAD] = root + index;
+						/* _requestHeader.insert(strPair(HEAD, root + index)); */
 					else
-						_requestHeader.insert(strPair(HEAD, root + "/" + str));
+						_requestHeader[HEAD] = root + str;
+						/* _requestHeader.insert(strPair(HEAD, root + str)); */
 				}
-				else if (_method == "GET" && str.find(root) != std::string::npos) {
-					_requestHeader.insert(strPair(HEAD, str));
+				else if (_method == "GET" && str.find(rawRoot) != std::string::npos) {
+					_requestHeader[HEAD] = str;
+					/*_requestHeader[HEAD].insert(strPair(HEAD, str)); */
+					/* std::cout << "HEAD in processLine: " << _requestHeader[HEAD] << std::endl; */
 				}
 				else if (_method == "POST") {
 					str.erase(0, 1);
-					_requestHeader.insert(strPair(HEAD, str));
+					_requestHeader[HEAD] = str;
 				}
 			}
 			break;
@@ -87,12 +98,18 @@ static t_location* getLocation(const std::string& path, std::vector<t_location>&
 		if (path == it->locationPath)
 			return (&(*it));
 	}
-	return (NULL);
+	return (&(*locations.begin()));
 }
 
 int Request::getLineToken(std::string line) {
 	if (line.find("POST") != std::string::npos || line.find("GET") != std::string::npos || line.find("DELETE") != std::string::npos) {
-		_location = getLocation(getToken(line, ' ', 2), _serverConfig.locations);
+		std::string path = getToken(line, ' ', 2);
+		size_t pos = path.find("/", 1);
+		if (pos != std::string::npos && closedir(opendir(_requestHeader[HEAD].c_str())) == -1)
+			path = path.substr(0, pos);
+		else
+			path = "/";
+		_location = getLocation(path, _serverConfig.locations);
 		return (HEAD);
 	}
 	else if (line.find("Host:") != std::string::npos)

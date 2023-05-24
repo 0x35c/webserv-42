@@ -13,7 +13,7 @@
 #include "parsing/parsing.hpp"
 
 #define BUFFER_SIZE 8192
-#define DEBUG 0
+#define DEBUG 1
 typedef std::map<int, std::string> strMap;
 typedef std::pair<int, std::string> strPair;
 

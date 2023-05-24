@@ -18,7 +18,7 @@ typedef std::map<int, std::string> strMap;
 typedef std::pair<int, std::string> strPair;
 
 enum methods {
-	GET,
+	GET = 0,
 	POST,
 	DELETE
 };
@@ -67,6 +67,7 @@ class Request {
 		void respondToRequest(void);
 
 		int getClientfd(void) const;
+		const std::string& getStatusCode(void) const;
 		t_cgi& getCGI(void);
 
 	// Private member functions
@@ -74,6 +75,7 @@ class Request {
 		void respondToGetRequest(void);
 		void respondToPostRequest(void);
 		void respondToDeleteRequest(void);
+		void sendErrorResponse(void);
 		void errorOnRequest(void);
 		void processLine(std::string line, int lineToken);
 		void parseHeader(const std::string& request);

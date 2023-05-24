@@ -61,17 +61,32 @@ static void getQuery(std::string& query, const std::string& name) {
 		query = name.substr(delimiter + 1);
 }
 
+void Request::sendErrorResponse(void) {
+	std::ifstream file(_requestHeader[HEAD].c_str());
+
+	file.seekg(0, std::ios::end);
+	std::streampos fileSize = file.tellg();
+	file.seekg(0, std::ios::beg);
+
+	std::ostringstream ss;
+	ss << "HTTP/1.1 " << _statusCode << "\r\n";
+	ss << "Content-type: text/html\r\n";
+	ss << "Content-Length: " << fileSize << "\r\n\r\n";
+	ss << file.rdbuf();
+	send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
+}
+
 void Request::initializeEnvpCGI(void) {
 	_cgiEnv["SERVER_SOFTWARE"] = "BOZOSERVER/2.0";
-	_cgiEnv["SERVER_NAME"] = "BOZO"; // parsing
-	_cgiEnv["SERVER_PORT"] = "8080"; // parsing
+	_cgiEnv["SERVER_NAME"] = _serverConfig.server_name;
+	_cgiEnv["SERVER_PORT"] = _serverConfig.port;
 	_cgiEnv["SERVER_PROTOCOL"] = "HTTP/1.1";
 	_cgiEnv["REQUEST_METHOD"] = _method;
 	_cgiEnv["GATEWAY_INTERFACE"] = "CGI/1.1";
 	_cgiEnv["CONTENT_TYPE"] = _requestHeader[CONTENT_TYPE];
 	_cgiEnv["CONTENT_LENGTH"] = _requestHeader[CONTENT_LENGTH];
-	_cgiEnv["REMOTE_ADDR"] = "0.0.0.0"; // parsing
-	_cgiEnv["PATH"] = "www/"; // parsing
+	_cgiEnv["REMOTE_ADDR"] = "0.0.0.0";
+	_cgiEnv["PATH"] = _location->root;
 	_cgiEnv["HTTP_USER_AGENT"] = _requestHeader[USER_AGENT];
 }
 
@@ -170,7 +185,8 @@ void Request::respondToGetRequest(void) {
 			executeCGI(fileName);
 		}
 		else {
-			setStatusCode();
+			if (setStatusCode() == 400)
+				return (sendErrorResponse());
 			std::ifstream file(_requestHeader[HEAD].c_str(), std::ios::in | std::ios::binary);
 
 			file.seekg(0, std::ios::end);
@@ -191,13 +207,16 @@ void Request::respondToGetRequest(void) {
 	}
 	else {
 		_isDirectory = true;
-		setStatusCode();
+		if (setStatusCode() == 400)
+			return (sendErrorResponse());
 		directoryListing(directory, _requestHeader[HEAD]);
 	}
 }
 
 void Request::respondToPostRequest(void) {
 	int statusCode = setStatusCode();
+	if (statusCode == 400)
+		return (sendErrorResponse());
 
 	_cgi.inCGI = false;
 	std::string fileName = _requestHeader[HEAD].substr(0, _requestHeader[HEAD].find("?"));
@@ -208,8 +227,9 @@ void Request::respondToPostRequest(void) {
 		return ;
 	}
 	std::ostringstream ss;
-	if (_requestHeader[HEAD] != "")
+	if (_requestHeader[HEAD] != "") {
 		_statusCode = "302 Redirect";
+	}
 	ss << "HTTP/1.1 " << _statusCode << "\r\n";
 	ss << "Content-type: " << _requestHeader[ACCEPT] << "\r\n";
 	if (_statusCode == "302 Redirect")
@@ -287,4 +307,8 @@ int Request::getClientfd(void) const {
 
 t_cgi& Request::getCGI(void) {
 	return (_cgi);
+}
+
+const std::string& Request::getStatusCode(void) const {
+	return (_statusCode);
 }

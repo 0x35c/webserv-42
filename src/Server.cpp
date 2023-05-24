@@ -95,7 +95,7 @@ void Server::checkCGI(void)
 				int fileSize = read(it->second.getCGI().fds[1][0], buffer, BUFFER_SIZE);
 				if (fileSize < 0)
 					throw (ServerException());
-				ss << "HTTP/1.1 200\r\n";
+				ss << "HTTP/1.1 " << it->second.getStatusCode() << "\r\n";
 				ss << "Content-type: text/html\r\n";
 				ss << "Content-Length: " << fileSize << "\r\n\r\n";
 				ss << buffer;

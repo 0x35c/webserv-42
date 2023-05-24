@@ -36,12 +36,8 @@ static std::string getExtension(const std::string& fileName) {
 void Request::processLine(std::string line, int lineToken) {
 	std::string str = getToken(line, ' ', 2);
 	int pos = str.find('\r');
-	std::string root = "www/";
-	std::string index = "index.html";
-	if (_location != NULL) {
-		root = _location->root;
-		index = _location->index;
-	}
+	std::string root = _location->root;
+	std::string index = _location->index;
 	if (pos > 0)
 		str.erase(pos, 1);
 	switch (lineToken) {

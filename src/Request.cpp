@@ -3,7 +3,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <ctime>
-
+#include "Server.hpp"
 static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv);
 
 Request::Request(void)
@@ -92,44 +92,63 @@ static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv) {
 
 // Function is working but we might need to change it 
 // to make the read() syscall go through select()
-void Request::respondToGetCGI(std::string fileName) {
+void Request::executeCGI(std::string fileName) {
 	initializeEnvpCGI();
 	_cgiEnv["SCRIPT_NAME"] = fileName;
 	_cgiEnv["URL"] = fileName;
 	/* TO-DO LIST
 	 * need to save the pid to kill it if we do a ctrl C during the loading of the CGI
-	 * change the envp variables of execve to the good one
-	 * check return of functions (pipe, dup2, close, read, send, kill)
 	*/
-	pipe(_cgi.fds[0]);
-	pipe(_cgi.fds[1]);
+	if (pipe(_cgi.fds[0]) == -1
+		|| pipe(_cgi.fds[1]) == -1)
+		throw (Server::ServerException());
 	int pid = fork();
 	if (pid == 0)
 	{
-		dup2(_cgi.fds[0][0], 0);
-		dup2(_cgi.fds[1][1], 1);
-		close(_cgi.fds[0][0]);
-		close(_cgi.fds[0][1]);
-		close(_cgi.fds[1][0]);
-		close(_cgi.fds[1][1]);
+		if (dup2(_cgi.fds[0][0], 0) == -1
+			|| dup2(_cgi.fds[1][1], 1) == -1
+			|| close(_cgi.fds[0][0]) == -1
+			|| close(_cgi.fds[0][1]) == -1
+			|| close(_cgi.fds[1][0]) == -1
+			|| close(_cgi.fds[1][1]) == -1)
+			throw (Server::ServerException());
 
-		std::string querys = _requestHeader[HEAD].substr(_requestHeader[HEAD].find("?") + 1, std::string::npos);
+		std::string querys;
+		if (_method == "GET")
+			querys = _requestHeader[HEAD].substr(_requestHeader[HEAD].find("?") + 1, std::string::npos);
+		else if (_method == "POST")
+			querys = _requestHeader[BODY];
 		_cgiEnv["QUERY_STRING"] = querys;
 		char *args[4] = {(char *)"/usr/bin/python3", (char *)(fileName.c_str()),
 						(char *)(querys.c_str()),NULL};
-		execve("/usr/bin/python3", args, getEnvpInArray(_cgiEnv));
+		char **EnvpVariables = getEnvpInArray(_cgiEnv);
+		execve("/usr/bin/python3", args, EnvpVariables);
 		/* TEST */
 		std::string executionFailed = "<html><body><h1>execution of CGI failed</h1></body></html>";
-		write(1, executionFailed.c_str(), executionFailed.length());
+		for (size_t i = 0; EnvpVariables[i]; i++)
+			delete EnvpVariables[i];
+		delete [] EnvpVariables;
+		if (write(1, executionFailed.c_str(), executionFailed.length()) < 0)
+			throw (Server::ServerException());
 		exit(EXIT_FAILURE);
 	}
-	else if (pid > 0)
+	else if (pid != 0)
 	{
-		_cgi.pid = pid;
-		_cgi.begin_time = std::time(NULL);
-		close(_cgi.fds[0][0]);
-		close(_cgi.fds[0][1]);
-		close(_cgi.fds[1][1]);
+		if (close(_cgi.fds[0][0]) == -1
+			|| close(_cgi.fds[0][1]) == -1
+			|| close(_cgi.fds[1][1]) == -1)
+			throw (Server::ServerException());
+		if (pid > 0)
+		{
+			_cgi.pid = pid;
+			_cgi.begin_time = std::time(NULL);
+		}
+		else if (pid < 0)
+		{
+			_cgi.inCGI = false;
+			if (close(_cgi.fds[1][0]) == -1)
+				throw (Server::ServerException());
+		}
 	}
 }
 
@@ -148,7 +167,7 @@ void Request::respondToGetRequest(void) {
 		std::string fileName = _requestHeader[HEAD].substr(0, _requestHeader[HEAD].find("?"));
 		if (fileName.length() > 3 && fileName.substr(fileName.length() - 3) == ".py") {
 			_cgi.inCGI = true;
-			respondToGetCGI(fileName);
+			executeCGI(fileName);
 		}
 		else {
 			setStatusCode();
@@ -177,45 +196,6 @@ void Request::respondToGetRequest(void) {
 	}
 }
 
-void Request::respondToPostCGI(std::string fileName) {
-	initializeEnvpCGI();
-	_cgiEnv["SCRIPT_NAME"] = fileName;
-	_cgiEnv["URL"] = fileName;
-	/* TO-DO LIST
-	 * need to save the pid to kill it if we do a ctrl C during the loading of the CGI
-	 * change the envp variables of execve to the good one
-	 * check return of functions (pipe, dup2, close, read, send, kill)
-	*/
-	pipe(_cgi.fds[0]);
-	pipe(_cgi.fds[1]);
-	int pid = fork();
-	if (pid == 0)
-	{
-		dup2(_cgi.fds[0][0], 0);
-		dup2(_cgi.fds[1][1], 1);
-		close(_cgi.fds[0][0]);
-		close(_cgi.fds[0][1]);
-		close(_cgi.fds[1][0]);
-		close(_cgi.fds[1][1]);
-
-		std::string querys = _requestHeader[BODY];
-		_cgiEnv["QUERY_STRING"] = querys;
-		char *args[4] = {(char *)"/usr/bin/python3", (char *)(fileName.c_str()),
-						(char *)(querys.c_str()),NULL};
-		//execve("/usr/bin/python3", args, getEnvpInArray(_cgiEnv));
-		execve("/usr/bin/python3", args, NULL);
-		exit(0);
-	}
-	else if (pid > 0)
-	{
-		_cgi.pid = pid;
-		_cgi.begin_time = std::time(NULL);
-		close(_cgi.fds[0][0]);
-		close(_cgi.fds[0][1]);
-		close(_cgi.fds[1][1]);
-	}
-}
-
 void Request::respondToPostRequest(void) {
 	int statusCode = setStatusCode();
 
@@ -223,7 +203,7 @@ void Request::respondToPostRequest(void) {
 	std::string fileName = _requestHeader[HEAD].substr(0, _requestHeader[HEAD].find("?"));
 	if (fileName.substr(fileName.length() - 3) == ".py") {
 		_cgi.inCGI = true;
-		respondToPostCGI("www/c" + _requestHeader[HEAD]); // need to correct this
+		executeCGI("www/c" + _requestHeader[HEAD]); // need to correct this
 		return ;
 	}
 	std::ostringstream ss;

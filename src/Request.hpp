@@ -72,9 +72,7 @@ class Request {
 	// Private member functions
 	private:
 		void respondToGetRequest(void);
-		void respondToGetCGI(std::string fileName);
 		void respondToPostRequest(void);
-		void respondToPostCGI(std::string fileName);
 		void respondToDeleteRequest(void);
 		void errorOnRequest(void);
 		void processLine(std::string line, int lineToken);
@@ -84,6 +82,7 @@ class Request {
 		int getLineToken(std::string line);
 		const std::string getMethod(std::string buffer);
 		void directoryListing(DIR* directory, const std::string& dirName);
+		void executeCGI(std::string fileName);
 		void initializeEnvpCGI(void);
 
 	// Private member attributes

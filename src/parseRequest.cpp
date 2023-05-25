@@ -51,19 +51,14 @@ void Request::processLine(std::string line, int lineToken) {
 					_validRequest = true;
 				else
 					_validRequest = false;
-				if (_method == "GET" && str.find(rawRoot) == std::string::npos) {
+				if (str.find(rawRoot) == std::string::npos) {
 					if (str.length() == 0)
 						_requestHeader[HEAD] = root + index;
 					else
 						_requestHeader[HEAD] = root + str;
 				}
-				else if (_method == "GET" && str.find(rawRoot) != std::string::npos) {
+				else
 					_requestHeader[HEAD] = str;
-				}
-				else if (_method == "POST") {
-					str.erase(0, 1);
-					_requestHeader[HEAD] = str;
-				}
 			}
 			break;
 		case BOUNDARY:
@@ -151,9 +146,6 @@ static void processBody(std::string& boundary, std::string& line, strMap& reques
 		tmp.erase(tmp.end() - 1);
 		requestHeader[BODY].clear();
 		requestHeader[BODY] = tmp;
-	}
-	else {
-		std::cout << str << std::endl;
 	}
 }
 

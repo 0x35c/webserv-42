@@ -156,9 +156,11 @@ void Request::respondToGetRequest(void) {
 	_isDirectory = false;
 	_cgi.inCGI = false;
 	if (directory == NULL) {
-		std::string fileName = _requestHeader[HEAD].substr(0, _requestHeader[HEAD].find("?"));
+		std::string fileName = _requestHeader[HEAD];
 		if (fileName.length() > 3 && fileName.substr(fileName.length() - 3) == ".py") {
 			_cgi.inCGI = true;
+			if (setStatusCode() == 400)
+				return (sendErrorResponse());
 			executeCGI(fileName);
 		}
 		else {
@@ -197,20 +199,23 @@ void Request::respondToPostRequest(void) {
 
 	_cgi.inCGI = false;
 	std::string fileName = _requestHeader[HEAD].substr(0, _requestHeader[HEAD].find("?"));
-	std::cout << "FILENAME POST CGI: " << fileName << std::endl;
 	if (fileName.length() > 3 && fileName.substr(fileName.length() - 3) == ".py") {
 		_cgi.inCGI = true;
-		executeCGI("www/c" + _requestHeader[HEAD]); // need to correct this
+		if (setStatusCode() == 400)
+			return (sendErrorResponse());
+		executeCGI(_requestHeader[HEAD]);
 		return ;
 	}
 	std::ostringstream ss;
 	if (_requestHeader[HEAD] != "") {
-		_statusCode = "302 Redirect";
+		_requestHeader[LOCATION] = "/done.html";
 	}
+	else
+		_requestHeader[LOCATION] = "/";
 	ss << "HTTP/1.1 " << _statusCode << "\r\n";
 	ss << "Content-type: " << _requestHeader[ACCEPT] << "\r\n";
 	if (_statusCode == "302 Redirect")
-		ss << "Location: /done.html" << "\r\n";
+		ss << "Location: " << _requestHeader[LOCATION] << "\r\n";
 	ss << "Content-length: 0" << "\r\n\r\n";
 	send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
 

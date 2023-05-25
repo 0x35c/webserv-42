@@ -2,85 +2,94 @@
 #include <fstream>
 #include <cstring>
 
-void	Parsing::checkDifferentServer(std::vector<t_server> servers)
+void	Parsing::checkDifferentServer()
 {
-	for (size_t i = 0; i < servers.size(); i++)
+	for (size_t i = 0; i < _servers.size(); i++)
 	{
-		for (size_t j = i + 1; j < servers.size(); j++)
+		for (size_t j = i + 1; j < _servers.size(); j++)
 		{
-			if (servers[i].port == servers[j].port && servers[i].host == servers[j].host)
+			if (_servers[i].port == _servers[j].port && _servers[i].host == _servers[j].host)
 				throw (ParsingError("multiple server with same address."));
 		}
 	}
 }
+
+void	Parsing::noBlock()
+{
+	if (_line.length() > 0 && _line != "server {")
+		throw(ParsingError("line " + intToString(_nbLine) + " is invalid."));
+	_inServerBlock = true;
+	initializeServer();
+}
+
+void Parsing::serverBlock()
+{
+			if (strncmp(_line.c_str(), "location", 8) == 0)
+			{
+				std::vector<std::string> lineSplitted = splitString(_line, ' ');
+				if (lineSplitted.size() != 3)
+					throw(ParsingError("line " + intToString(_nbLine) + " is invalid."));
+				_location.locationPath = lineSplitted[1];
+				initializeLocation();
+				_inLocationBlock = true;
+			}
+			else if (_line == "}")
+			{
+				_servers.push_back(_server);
+				_inServerBlock = false;
+				resetBlockArg(SERVER_BLOCK);
+			}
+			else
+				parseLineServerBlock();
+}
+
+void Parsing::locationBlock()
+{
+			if (strncmp(_line.c_str(), "methods", 7) == 0)
+				_inMethodBlock = true;
+			else if (_line == "}")
+			{
+				testLocationValue();
+				_server.locations.push_back(_location);
+				_inLocationBlock = false;
+				resetBlockArg(LOCATION_BLOCK);
+			}
+			else
+				parseLineLocationBlock();
+}
+
+void Parsing::methodBlock()
+{
+			if (_line == "}")
+			{
+				_inMethodBlock = false;
+				resetBlockArg(METHOD_BLOCK);
+			}
+			else
+				parseLineMethodBlock();
+}
+
 const std::vector<t_server> Parsing::readConfFile(std::ifstream & confFile)
 {
-	std::vector<t_server> servers;
-
-	int 						nbLine = 0;
-	bool 						inServerBlock = false;
-	bool 						inLocationBlock = false;
-	bool 						inMethodBlock = false;
-	std::string 				line;
-	t_server					server;
-	t_location					location;
-	while (std::getline(confFile, line))
+	while (std::getline(confFile, _line))
 	{
-		nbLine++;
-		trimString(line, WHITESPACE);
-		line = line.substr(0, line.find("##"));
-		if (line.length() == 0)
+		_nbLine++;
+		trimString(_line, WHITESPACE);
+		_line = _line.substr(0, _line.find("##"));
+		if (_line.length() == 0)
 			continue;
-		else if (!inServerBlock && !inLocationBlock && !inMethodBlock)
-		{
-			if (line.length() > 0 && line != "server {")
-				throw(ParsingError("line " + intToString(nbLine) + " is invalid."));
-			inServerBlock = true;
-			initializeServer(server);
-		}
-		else if (inServerBlock && !inLocationBlock && !inMethodBlock)
-		{
-			if (strncmp(line.c_str(), "location", 8) == 0)
-			{
-				std::vector<std::string> lineSplitted = splitString(line, ' ');
-				if (lineSplitted.size() != 3)
-					throw(ParsingError("line " + intToString(nbLine) + " is invalid."));
-				location.locationPath = lineSplitted[1];
-				initializeLocation(location);
-				inLocationBlock = true;
-			}
-			else if (line == "}")
-			{
-				servers.push_back(server);
-				inServerBlock = false;
-			}
-			else
-				parseLineServerBlock(line, nbLine, server);
-		}
-		else if (inServerBlock && inLocationBlock && !inMethodBlock)
-		{
-			if (strncmp(line.c_str(), "methods", 7) == 0)
-				inMethodBlock = true;
-			else if (line == "}")
-			{
-				testLocationValue(location);
-				server.locations.push_back(location);
-				inLocationBlock = false;
-			}
-			else
-				parseLineLocationBlock(line, nbLine, location);
-		}
-		else if (inServerBlock && inLocationBlock && inMethodBlock)
-		{
-			if (line == "}")
-				inMethodBlock = false;
-			else
-				parseLineMethodBlock(line, nbLine, location);
-		}
+		else if (!_inServerBlock && !_inLocationBlock && !_inMethodBlock)
+			noBlock();
+		else if (_inServerBlock && !_inLocationBlock && !_inMethodBlock)
+			serverBlock();
+		else if (_inServerBlock && _inLocationBlock && !_inMethodBlock)
+			locationBlock();
+		else if (_inServerBlock && _inLocationBlock && _inMethodBlock)
+			methodBlock();
 	}
 	confFile.close();
-	checkDifferentServer(servers);
-	return (servers);
+	checkDifferentServer();
+	return (_servers);
 }
 
 const std::vector<t_server> Parsing::parseConfFile(const std::string path)

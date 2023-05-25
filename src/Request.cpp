@@ -152,11 +152,6 @@ void Request::executeCGI(std::string fileName) {
 
 void Request::respondToGetRequest(void) {
 	editName(_requestHeader[HEAD]);
-#if DEBUG
-	std::cout << "ORIGIN: " << _requestHeader[ORIGIN] << std::endl;
-	std::cout << "FILENAME: " << _requestHeader[HEAD] << std::endl;
-	std::cout << _query << std::endl;
-#endif
 	DIR* directory = opendir(_requestHeader[HEAD].c_str());
 	_isDirectory = false;
 	_cgi.inCGI = false;

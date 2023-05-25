@@ -1,14 +1,20 @@
 #pragma once
 
 #define WHITESPACE " \n\r\t\f\v"
+
 #define ROOT 0
 #define REDIRECTION 1
 #define UPLOAD 2
 #define INDEX 3
 
+#define SERVER_BLOCK 0
+#define LOCATION_BLOCK 1
+#define METHOD_BLOCK 2
+
 #include <string>
 #include <vector>
 #include <arpa/inet.h>
+#include <map>
 
 typedef struct s_location {
 	std::string	locationPath;
@@ -26,6 +32,7 @@ typedef struct s_location {
 
 } t_location;
 
+
 typedef struct s_server {
 	std::string 			host;
 	int						port;
@@ -37,43 +44,80 @@ typedef struct s_server {
 	std::vector<t_location>	locations;
 } t_server;
 
-namespace Parsing
+class Parsing;
+
+typedef void (Parsing::*function)(const std::vector<std::string> &);
+
+class Parsing
 {
-	//parseConfFile.cpp
-	const std::vector<t_server> parseConfFile(const std::string path);
-	const std::vector<t_server> readConfFile(std::ifstream & confFile);
-	void checkDifferentServer(std::vector<t_server> servers);
+	public:
+		//parseConfFile.cpp
+		
+		const std::vector<t_server> parseConfFile(const std::string path);
+		
+		//Parsing.cpp
+		
+		Parsing();
+		~Parsing();
+	
+	private:
+		//Parsing.cpp
+		
+		Parsing(const Parsing & other);
+		Parsing & operator = (const Parsing & other);
+		
+		//parseConfFile.cpp
+		 void noBlock();
+		 void serverBlock();
+		 void locationBlock();
+		 void methodBlock();
+		 const std::vector<t_server> readConfFile(std::ifstream & confFile);
+		 void checkDifferentServer();
 
-	//parseLine.cpp
+		//parseLine.cpp
 
-	void	parseLineServerBlock(const std::string & line, const int & nbLine, t_server & server);
-	void	parseLineLocationBlock(const std::string & line, const int & nbLine, t_location & location);
-	void	parseLineMethodBlock(const std::string & line, const int & nbLine, t_location & location);
+		 std::map<std::string, function> initFunctionMap(int block);
+		 void	resetBlockArg(int block);
+		 void	parseLineServerBlock();
+		 void	parseLineLocationBlock();
+		 void	parseLineMethodBlock();
 
-	//attributeFunction.cpp
+		//attributeFunction.cpp
 
-	void testLocationValue(const t_location & location);
-	void CGIAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted);
-	void methodAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted);
-	void returnAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted);
-	void rootAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted);
-	void directoryListingAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted);
-	void indexAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted);
-	void acceptUploadedFileAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted);
-	void saveUploadedFileAttribute(t_location & location, const int & nbLine, const std::vector<std::string> & lineSplitted);
+		 void testLocationValue();
+		 void CGIAttribute(const std::vector<std::string> & lineSplit);
+		 void methodAttribute(const std::vector<std::string> & lineSplit);
+		 void returnAttribute(const std::vector<std::string> & lineSplit);
+		 void rootAttribute(const std::vector<std::string> & lineSplit);
+		 void directoryListingAttribute(const std::vector<std::string> & lineSplit);
+		 void indexAttribute(const std::vector<std::string> & lineSplit);
+		 void acceptUploadedFileAttribute(const std::vector<std::string> & lineSplit);
+		 void saveUploadedFileAttribute(const std::vector<std::string> & lineSplit);
 
-	void listenAttribute(t_server & server, const int & nbLine, const std::vector<std::string> & lineSplitted);
-	void serverNameAttribute(t_server & server, const int & nbLine, const std::vector<std::string> & lineSplitted);
-	void errpageAttribute(t_server & server, const int & nbLine, const std::vector<std::string> & lineSplitted);
-	void maxFilesizeUploadAttribute(t_server & server, const int & nbLine, const std::vector<std::string> & lineSplitted);
-	void locationAttribute(t_server & server, const int & nbLine, const std::vector<std::string> & lineSplitted);
+		 void listenAttribute(const std::vector<std::string> & lineSplit);
+		 void serverNameAttribute(const std::vector<std::string> & lineSplit);
+		 void errpageAttribute(const std::vector<std::string> & lineSplit);
+		 void maxFilesizeUploadAttribute(const std::vector<std::string> & lineSplit);
+		 void locationAttribute(const std::vector<std::string> & lineSplit);
 
-	//initializeStruct.cpp
+		//initializeStruct.cpp
 
-	void	initializeServer(t_server & server);
-	void	initializeLocation(t_location & location);
+		 void	initializeServer();
+		 void	initializeLocation();
 
-}
+	private:
+		int _nbLine;
+		bool _inServerBlock;
+		bool _argumentUsedServer[5];
+		bool _inLocationBlock;
+		bool _argumentUsedLocation[8];
+		bool _inMethodBlock;
+		bool _argumentUsedMethod[3];
+		std::string _line;
+		std::vector<t_server> _servers;
+		t_server _server;
+		t_location _location;
+};
 	
 //utils.cpp
 

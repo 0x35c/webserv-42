@@ -19,10 +19,11 @@ int	main(int argc, char **argv)
 	std::vector<t_server> serverConfigFile;
 	try
 	{
+		Parsing parser;
 		if (argc == 2)
-			serverConfigFile = Parsing::parseConfFile(argv[1]);
+			serverConfigFile = parser.parseConfFile(argv[1]);
 		else
-			serverConfigFile = Parsing::parseConfFile("conf/easy.conf");
+			serverConfigFile = parser.parseConfFile("conf/easy.conf");
 	}
 	catch(const std::string exception)
 	{

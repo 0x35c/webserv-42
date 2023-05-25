@@ -47,9 +47,6 @@ void Request::processLine(std::string line, int lineToken) {
 				str.erase(0, 1);
 				std::string rawRoot = root;
 				rawRoot.erase(rawRoot.length() - 1, 1);
-#if DEBUG
-				std::cout << "File name: " << str << "\n";
-#endif
 				if (line.find("HTTP/1.1") != std::string::npos)
 					_validRequest = true;
 				else
@@ -57,15 +54,11 @@ void Request::processLine(std::string line, int lineToken) {
 				if (_method == "GET" && str.find(rawRoot) == std::string::npos) {
 					if (str.length() == 0)
 						_requestHeader[HEAD] = root + index;
-						/* _requestHeader.insert(strPair(HEAD, root + index)); */
 					else
 						_requestHeader[HEAD] = root + str;
-						/* _requestHeader.insert(strPair(HEAD, root + str)); */
 				}
 				else if (_method == "GET" && str.find(rawRoot) != std::string::npos) {
 					_requestHeader[HEAD] = str;
-					/*_requestHeader[HEAD].insert(strPair(HEAD, str)); */
-					/* std::cout << "HEAD in processLine: " << _requestHeader[HEAD] << std::endl; */
 				}
 				else if (_method == "POST") {
 					str.erase(0, 1);
@@ -156,9 +149,6 @@ static void processBody(std::string& boundary, std::string& line, strMap& reques
 		size_t pos = tmp.rfind("\n------------------");
 		tmp.erase(pos, pos - tmp.length());
 		tmp.erase(tmp.end() - 1);
-#if DEBUG
-		std::cout << tmp;
-#endif
 		requestHeader[BODY].clear();
 		requestHeader[BODY] = tmp;
 	}
@@ -181,7 +171,6 @@ void Request::parseHeader(const std::string& buffer) {
 		}
 		if (line == "\r")
 		{
-			//std::cout << buffer;
 			break ;
 		}
 		lineToken = getLineToken(line);
@@ -232,9 +221,6 @@ bool Request::parseBody(const std::string& buffer) {
 	_requestHeader[BODY] += buffer;
 	size_t pos = buffer.find(_boundary);
 	if (pos != std::string::npos && pos > _boundary.length() + 30) {
-#if DEBUG
-		std::cout << "Body finished" << std::endl;
-#endif
 		return (true);
 	}
 	return (false);

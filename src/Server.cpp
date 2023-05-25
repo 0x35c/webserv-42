@@ -162,9 +162,6 @@ void Server::_acceptConnection(int socketFd, const t_server& serverConfig)
 	FD_SET(fd, &_readSet);
 	_requests[fd] = Request(fd, serverConfig);
 	_requests[fd].getCGI().inCGI = false;
-#if DEBUG
-	std::cout << "accepted connection\n";
-#endif
 }
 
 bool Server::_processRequest(int clientFd, Request &request)
@@ -177,20 +174,11 @@ bool Server::_processRequest(int clientFd, Request &request)
 		FD_CLR(clientFd, &_readSet);
 		if (rc < 0)
 			std::cerr << "error: " << strerror(errno) << "\n";
-#if DEBUG
-		std::cout << "closed connection\n";
-#endif
 		return true;
 	}
-#if DEBUG
-	std::cout << rc << " bytes read\n";
-#endif
 	if (request.readRequest(header_buffer))
 	{
 		request.respondToRequest();
-#if DEBUG
-		std::cout << "response sent\n";
-#endif
 	}
 
 	return false;

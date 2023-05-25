@@ -7,6 +7,7 @@ SRCS	:= main.cpp\
 		   parseRequest.cpp\
 		   directoryListing.cpp\
 		   statusCode.cpp\
+		   parsing/Parsing.cpp\
 		   parsing/attributeFunction.cpp\
 		   parsing/initializeStruct.cpp\
 		   parsing/parseConfFile.cpp\

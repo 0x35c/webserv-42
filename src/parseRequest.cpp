@@ -187,29 +187,25 @@ void Request::parseHeader(const std::string& buffer) {
 }
 
 bool Request::parseChunkedBody(const std::string& buffer) {
-	static bool bufferFull = false;
-	static std::string tmpBody = "";
-	if (!bufferFull)
+	if (!_chunkBufferFull)
 	{
-		tmpBody += buffer;
+		_chunkBuffer += buffer;
 		if (buffer.find("\r\n0\r\n", 0) != std::string::npos)
-			bufferFull = true;
+			_chunkBufferFull = true;
 		else
 			return (false);
 	}
 
 	std::size_t pos = 0;
 	while (true) {
-		std::size_t limPos = tmpBody.find("\r\n", pos);
-		std::string tmp = tmpBody.substr(pos, limPos - pos);
-		long size = std::strtol(tmp.c_str(), NULL, 16);
+		std::size_t limPos = _chunkBuffer.find("\r\n", pos);
+		long size = std::strtol(_chunkBuffer.substr(pos, limPos - pos).c_str(), NULL, 16);
 		if (size == 0) {
-			std::cout << "Body finished" << std::endl;
-			tmpBody.clear();
-			bufferFull = false;
+			_chunkBuffer.clear();
+			_chunkBufferFull = false;
 			return (true);
 		}
-		_requestHeader[BODY] += tmpBody.substr(limPos + 2, size);
+		_requestHeader[BODY] += _chunkBuffer.substr(limPos + 2, size);
 		pos = limPos + 2 + size + 2;
 	}
 }
@@ -237,12 +233,12 @@ static void getQuery(std::string& query, std::string& name) {
 void Request::respondToRequest(void) {
 	getQuery(_query, _requestHeader[HEAD]);
 	if (_method == "GET")
-		respondToGetRequest();	
+		respondToGetRequest();
 	else if (_method == "POST") {
 		processBody(_boundary, _requestHeader[BODY], _requestHeader);
-		respondToPostRequest();	
+		respondToPostRequest();
 	}
 	else if (_method == "DELETE")
-		respondToDeleteRequest();	
+		respondToDeleteRequest();
 	_requestHeader.clear();
 }

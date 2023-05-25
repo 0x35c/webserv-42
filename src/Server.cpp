@@ -20,6 +20,7 @@ void Server::addAddress(const t_server& serverConfig)
 	int fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0)
 		throw ServerException();
+
 	int option = 1;
 	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(int)) < 0)
 		throw ServerException();
@@ -94,7 +95,7 @@ void Server::checkCGI(void)
 				responseCGI = "Content-type: text/html\n\n<html><body><h1>execution of CGI failed</h1></body></html>";
 			std::string tmpHeader = responseCGI.substr(0, responseCGI.find("\n\n") + 1);
 			std::string tmpBody = responseCGI.substr(responseCGI.find("\n\n") + 2, std::string::npos);
-			size_t contentLength = tmpBody.length(); 
+			size_t contentLength = tmpBody.length();
 			ss << "HTTP/1.1 " << it->second.getStatusCode() << "\r\n";
 			ss << tmpHeader;
 			ss << "Content-Length: " << contentLength << "\r\n\r\n";
@@ -131,7 +132,7 @@ void Server::start(void)
 		checkCGI();
 		if (rv == 0)
 			continue ;
-		for (socketMap::iterator it = _sockets.begin(); it != _sockets.end(); it++) 
+		for (socketMap::iterator it = _sockets.begin(); it != _sockets.end(); it++)
 			if (FD_ISSET(it->first, &readSet))
 				_acceptConnection(it->first, it->second);
 
@@ -177,10 +178,7 @@ bool Server::_processRequest(int clientFd, Request &request)
 		return true;
 	}
 	if (request.readRequest(header_buffer))
-	{
 		request.respondToRequest();
-	}
-
 	return false;
 }
 

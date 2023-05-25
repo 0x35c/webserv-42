@@ -2,7 +2,7 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <title><!--ERROR_MESSAGE--></title>
+        <title>Page not found</title>
         <link rel="icon" href="https://media.tenor.com/lVIuYsJXHzEAAAAd/spongebob-dancing.gif" type="image/gif"/>
         <style>
             @keyframes background_animation {
@@ -41,7 +41,7 @@
         </style>
     </head>
     <body>
-        <h1>Error <!--ERROR_CODE--></h1>
-        <h2><!--ERROR_MESSAGE--></h2>
+        <h1>Error 403</h1>
+        <h2>Forbidden</h2>
     </body>
 </html>

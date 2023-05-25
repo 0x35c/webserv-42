@@ -162,7 +162,6 @@ void Server::_acceptConnection(int socketFd, const t_server& serverConfig)
 	}
 	FD_SET(fd, &_readSet);
 	_requests[fd] = Request(fd, serverConfig);
-	_requests[fd].getCGI().inCGI = false;
 }
 
 bool Server::_processRequest(int clientFd, Request &request)

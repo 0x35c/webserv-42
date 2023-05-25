@@ -9,18 +9,18 @@ static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv);
 
 Request::Request(void)
 	: _clientfd(-1), _method("NTM")
-{}
+{ _cgi.inCGI = false; }
 
 Request::Request(int clientfd, const t_server& serverConfig)
 	: _clientfd(clientfd), _method("NTM"), _serverConfig(serverConfig)
-{}
+{ _cgi.inCGI = false; }
 
 Request::Request(const Request& other)
 	: _clientfd(other._clientfd), _method(other._method), _statusCode(other._statusCode),
 		_boundary(other._boundary), _query(other._query),
 		_requestHeader(other._requestHeader), _isDirectory(other._isDirectory),
 		_serverConfig(other._serverConfig)
-{}
+{ _cgi.inCGI = other._cgi.inCGI; }
 
 Request&	Request::operator=(const Request& other) {
 	if (this != &other) {
@@ -32,6 +32,7 @@ Request&	Request::operator=(const Request& other) {
 		_requestHeader = other._requestHeader;
 		_isDirectory = other._isDirectory;
 		_serverConfig = other._serverConfig;
+		_cgi.inCGI = other._cgi.inCGI;
 	}
 	return *this;
 }
@@ -107,6 +108,7 @@ void Request::executeCGI(std::string fileName) {
 	if (pipe(_cgi.fds[0]) == -1
 		|| pipe(_cgi.fds[1]) == -1)
 		throw (Request::RequestException());
+	std::cout << "_query:" + _query +"\n";
 	int pid = fork();
 	if (pid == 0)
 	{
@@ -118,8 +120,8 @@ void Request::executeCGI(std::string fileName) {
 			|| close(_cgi.fds[1][1]) == -1)
 			throw (Request::RequestException());
 
-		if (_method == "POST")
-			_query = _requestHeader[BODY];
+		/* if (_method == "POST") */
+		/* 	_query = _requestHeader[BODY]; */
 		_cgiEnv["QUERY_STRING"] = _query;
 		char *args[4] = {(char *)"/usr/bin/python3", (char *)(fileName.c_str()),
 						(char *)(_query.c_str()),NULL};
@@ -198,12 +200,12 @@ void Request::respondToPostRequest(void) {
 		return (sendErrorResponse());
 
 	_cgi.inCGI = false;
-	std::string fileName = _requestHeader[HEAD].substr(0, _requestHeader[HEAD].find("?"));
+	std::string fileName = _requestHeader[HEAD];
 	if (fileName.length() > 3 && fileName.substr(fileName.length() - 3) == ".py") {
 		_cgi.inCGI = true;
 		if (setStatusCode() == 400)
 			return (sendErrorResponse());
-		executeCGI(_requestHeader[HEAD]);
+		executeCGI(fileName);
 		return ;
 	}
 	std::ostringstream ss;
@@ -220,7 +222,7 @@ void Request::respondToPostRequest(void) {
 	send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
 
 	if (statusCode == 200) {
-		std::ofstream file(("www/uploads/" + _requestHeader[HEAD]).c_str());
+		std::ofstream file((_location->uploadedFilePath + _requestHeader[HEAD]).c_str());
 		file << _requestHeader[BODY];
 		file.close();
 	}

@@ -32,7 +32,7 @@ void Parsing::testLocationValue()
 		throw(ParsingError("line " + intToString(_location.lines[REDIRECTION]) + " has an incorrect value."));
 	if (!isValidPath(tmpRoot + _location.index))
 		throw(ParsingError("line " + intToString(_location.lines[INDEX]) + " has an incorrect value."));
-	if (!isValidPathDir(tmpRoot + _location.uploadedFilePath))
+	if (!isValidPathDir(_location.uploadedFilePath))
 		throw(ParsingError("line " + intToString(_location.lines[UPLOAD]) + " has an incorrect value."));
 }
 

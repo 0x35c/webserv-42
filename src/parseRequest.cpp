@@ -120,7 +120,7 @@ int Request::getLineToken(std::string line) {
 		return (-2);
 }
 
-static void processBody(std::string& boundary, std::string& line, strMap& requestHeader) {
+static void processBody(std::string& boundary, std::string& line, strMap& requestHeader, std::string& query) {
 	int i = 1;
 	std::string str = getToken(line, '\n', i);
 	trimString(str, "-\r");
@@ -146,6 +146,9 @@ static void processBody(std::string& boundary, std::string& line, strMap& reques
 		tmp.erase(tmp.end() - 1);
 		requestHeader[BODY].clear();
 		requestHeader[BODY] = tmp;
+	}
+	else {
+		query = line;
 	}
 }
 
@@ -208,9 +211,8 @@ bool Request::parseBody(const std::string& buffer) {
 
 	_requestHeader[BODY] += buffer;
 	size_t pos = buffer.find(_boundary);
-	if (pos != std::string::npos && pos > _boundary.length() + 30) {
+	if (pos != std::string::npos && pos > _boundary.length() + 30)
 		return (true);
-	}
 	return (false);
 }
 
@@ -227,7 +229,7 @@ void Request::respondToRequest(void) {
 	if (_method == "GET")
 		respondToGetRequest();
 	else if (_method == "POST") {
-		processBody(_boundary, _requestHeader[BODY], _requestHeader);
+		processBody(_boundary, _requestHeader[BODY], _requestHeader, _query);
 		respondToPostRequest();
 	}
 	else if (_method == "DELETE")

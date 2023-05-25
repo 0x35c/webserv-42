@@ -235,4 +235,5 @@ void Request::respondToRequest(void) {
 	else if (_method == "DELETE")
 		respondToDeleteRequest();
 	_requestHeader.clear();
+	_boundary.clear();
 }

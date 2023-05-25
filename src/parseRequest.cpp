@@ -175,8 +175,6 @@ void Request::parseHeader(const std::string& buffer) {
 	}
 	line.clear();
 	size_t pos = buffer.find("\r\n\r\n");
-	if (pos == std::string::npos)
-		throw std::invalid_argument("invalid header");
 	line = buffer.substr(pos + 4, std::string::npos);
 	_requestHeader[BODY] = line;
 }
@@ -224,7 +222,28 @@ static void getQuery(std::string& query, std::string& name) {
 	}
 }
 
+static void editName(std::string& name) {
+	std::string subName = name;
+	while (true) {
+		size_t pos = subName.find("%");
+		if (pos != std::string::npos) {
+			std::string tmp = subName.substr(pos + 1, std::string::npos);
+			char* name_c = (char *)tmp.c_str();
+			name_c[2] = '\0';
+			long c = std::strtol(name_c, NULL, 16);
+			name.replace(name.find("%"), 3, (const char*)&c);
+			subName = tmp;
+		}
+		else if (name.find("+") != std::string::npos) {
+			name.replace(name.find("+"), 1, " ");
+		}
+		else
+			break ;
+	}
+}
+
 void Request::respondToRequest(void) {
+	editName(_requestHeader[HEAD]);
 	getQuery(_query, _requestHeader[HEAD]);
 	if (_method == "GET")
 		respondToGetRequest();

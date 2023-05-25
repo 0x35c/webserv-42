@@ -43,12 +43,13 @@ class Server {
 		requestMap	_requests;
 		socklen_t	_addressLen;
 		fd_set 		_readSet;
+		fd_set 		_writeSet;
 		t_server	_config;
 
 		Server(Server const &other);
 		Server &operator=(Server const &other);
 
 		void _acceptConnection(int socketFd, const t_server& serverConfig);
-		bool _processRequest(int clientFd, Request &request);
+		bool _processRequest(int clientFd, Request &request, fd_set* writeSet);
 		void checkCGI(void);
 };

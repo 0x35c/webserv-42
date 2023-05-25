@@ -37,26 +37,6 @@ Request&	Request::operator=(const Request& other) {
 	return *this;
 }
 
-static void editName(std::string& name) {
-	std::string subName = name;
-	while (true) {
-		size_t pos = subName.find("%");
-		if (pos != std::string::npos) {
-			std::string tmp = subName.substr(pos + 1, std::string::npos);
-			char* name_c = (char *)tmp.c_str();
-			name_c[2] = '\0';
-			long c = std::strtol(name_c, NULL, 16);
-			name.replace(name.find("%"), 3, (const char*)&c);
-			subName = tmp;
-		}
-		else if (name.find("+") != std::string::npos) {
-			name.replace(name.find("+"), 1, " ");
-		}
-		else
-			break ;
-	}
-}
-
 void Request::sendErrorResponse(void) {
 	std::ifstream file(_requestHeader[HEAD].c_str());
 
@@ -153,7 +133,6 @@ void Request::executeCGI(std::string fileName) {
 }
 
 void Request::respondToGetRequest(void) {
-	editName(_requestHeader[HEAD]);
 	DIR* directory = opendir(_requestHeader[HEAD].c_str());
 	_isDirectory = false;
 	_cgi.inCGI = false;
@@ -230,16 +209,14 @@ void Request::respondToPostRequest(void) {
 
 void Request::respondToDeleteRequest(void) {
 	setStatusCode();
-	std::string body = _requestHeader[BODY];
-	std::fstream file(_requestHeader[HEAD].c_str(), std::fstream::out);
-
+	std::string fileName = _requestHeader[HEAD];
+	std::cout << fileName << std::endl;
+	std::remove(fileName.c_str());
 	std::ostringstream ss;
 	ss << "HTTP/1.1 " << _statusCode << "\r\n";
-	ss << "Content-type: " + _requestHeader[ACCEPT] + "\r\n";
-	ss << "Content-Length: " << _requestHeader[CONTENT_LENGTH] << "\r\n\r\n";
+	ss << "Content-type: " << _requestHeader[ACCEPT] + "\r\n";
+	ss << "Content-Length: 0\r\n\r\n";
 	send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
-	file << body;
-	file.close();
 }
 
 const std::string Request::getMethod(std::string buffer) {
@@ -268,7 +245,7 @@ bool Request::readRequest(std::string const &rawRequest) {
 		std::string tmpBoundary = tmpBodyHeader.substr(0, tmpBodyHeader.find("\r"));
 		if (!(_requestHeader[TRANSFER_ENCODING] == "chunked" && _method == "POST")) {
 			long contentLength = std::atol(_requestHeader[CONTENT_LENGTH].c_str()) + tmpHeader.length() + 4 + tmpBodyHeader.length() + tmpBoundary.length() + 2;
-			if (_method == "GET" || (_method == "POST" && contentLength < BUFFER_SIZE)) {
+			if (_method == "GET" || _method == "DELETE" || (_method == "POST" && contentLength < BUFFER_SIZE)) {
 				headerRead = false;
 				return (true);
 			}

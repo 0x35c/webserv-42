@@ -8,6 +8,7 @@ Server::Server(void)
 	: _addressLen(sizeof(sockaddr_in))
 {
 	FD_ZERO(&_readSet);
+	FD_ZERO(&_writeSet);
 }
 
 void Server::addAddress(const t_server& serverConfig)
@@ -32,6 +33,7 @@ void Server::addAddress(const t_server& serverConfig)
 		throw ServerException();
 
 	FD_SET(fd, &_readSet);
+	FD_SET(fd, &_writeSet);
 	_sockets[fd] = serverConfig;
 	_sockets[fd].socketAddress = socketAddress;
 }
@@ -117,16 +119,18 @@ void Server::checkCGI(void)
 void Server::start(void)
 {
 	fd_set readSet;
+	fd_set writeSet;
 
 	for (socketMap::iterator it = _sockets.begin(); it != _sockets.end(); ++it)
 		std::cout << "Listening on " << inet_ntoa(it->second.socketAddress.sin_addr) << ":" << ntohs(it->second.socketAddress.sin_port) << std::endl;
 	while (true)
 	{
 		readSet = _readSet;
+		writeSet = _writeSet;
 		struct timeval timeout;
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 10000;
-		int rv = select(FD_SETSIZE + 1, &readSet, NULL, NULL, &timeout);
+		int rv = select(FD_SETSIZE + 1, &readSet, &writeSet, NULL, &timeout);
 		if (rv < 0)
 			throw ServerException();
 		checkCGI();
@@ -140,7 +144,7 @@ void Server::start(void)
 		{
 			if (FD_ISSET(it->first, &readSet) && it->second.getCGI().inCGI == false)
 			{
-				if (_processRequest(it->first, it->second))
+				if (_processRequest(it->first, it->second, &writeSet))
 				{
 					_requests.erase(it++);
 					continue ;
@@ -161,10 +165,11 @@ void Server::_acceptConnection(int socketFd, const t_server& serverConfig)
 		return ;
 	}
 	FD_SET(fd, &_readSet);
+	FD_SET(fd, &_writeSet);
 	_requests[fd] = Request(fd, serverConfig);
 }
 
-bool Server::_processRequest(int clientFd, Request &request)
+bool Server::_processRequest(int clientFd, Request &request, fd_set* writeSet)
 {
 	std::string header_buffer(BUFFER_SIZE, 0);
 	int rc = recv(clientFd, &header_buffer[0], BUFFER_SIZE, 0);
@@ -172,11 +177,12 @@ bool Server::_processRequest(int clientFd, Request &request)
 	{
 		close(clientFd);
 		FD_CLR(clientFd, &_readSet);
+		FD_CLR(clientFd, &_writeSet);
 		if (rc < 0)
 			std::cerr << "error: " << strerror(errno) << "\n";
 		return true;
 	}
-	if (request.readRequest(header_buffer))
+	if (request.readRequest(header_buffer) && FD_ISSET(clientFd, writeSet))
 		request.respondToRequest();
 	return false;
 }

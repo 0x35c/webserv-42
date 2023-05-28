@@ -8,8 +8,6 @@ void	Parsing::initializeLocation()
 	_location.redirectionPath = ""; // ?
 	_location.root = ""; // _locationPath ?
 	_location.directoryListing = true;
-	_location.executableCGI = "/usr/bin/python3";
-	_location.extensionCGI = ".py";
 	_location.index = ""; // ? {_locationPath}/index.html => error page if doesn't exist ?
 	_location.acceptUploadedFile = true;
 	_location.uploadedFilePath = ""; // {_locationPath}/uploads/ => need to create directory || www/uploads/ ?

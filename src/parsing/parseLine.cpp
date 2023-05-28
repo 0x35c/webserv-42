@@ -46,8 +46,8 @@ void Parsing::resetBlockArg(int block)
 void	Parsing::parseLineMethodBlock()
 {
 	std::vector<std::string> lineSplitted = splitString(_line, ' ');
-	if (lineSplitted.size() < 2)
-		throw(ParsingError("line " + intToString(_nbLine) + " has no value and take one."));
+	if (lineSplitted.size() != 2)
+		throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
 	
 	std::string arguments[3] = {"GET", "POST", "DELETE"};
 	for (int i = 0; i < 3; i++)
@@ -55,26 +55,23 @@ void	Parsing::parseLineMethodBlock()
 		if (arguments[i] == lineSplitted[0])
 		{
 			if (_argumentUsedMethod[i])
-				throw(ParsingError("line " + intToString(_nbLine) + " contains a redeclaration of an attribute."));
+				throw(ParsingError("line " + intToString(_nbLine) + REDECLARATION));
 			_argumentUsedMethod[i] = true;
 			if (lineSplitted[1] == "ON")
 				_location.methodsAllowed[i] = true;
 			else if (lineSplitted[1] == "OFF")
 				_location.methodsAllowed[i] = false;
 			else
-				throw(ParsingError("line " + intToString(_nbLine) + " has an incorrect value."));
+				throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VALUE));
 			return;
 		}
 	}
-	throw(ParsingError("line " + intToString(_nbLine) + " has an incorrect variable declaration."));
+	throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VARIABLE));
 }
 
 void	Parsing::parseLineLocationBlock()
 {
 	std::vector<std::string> lineSplitted = splitString(_line, ' ');
-	
-	if (lineSplitted.size() < 2)
-		throw(ParsingError("line " + intToString(_nbLine) + " has no value and take at least one."));
 	
 	static std::map<std::string, function> functionMap = initFunctionMap(LOCATION_BLOCK);
 	int i = 0;
@@ -85,14 +82,15 @@ void	Parsing::parseLineLocationBlock()
 		if (it->first == lineSplitted[0])
 		{
 			if (_argumentUsedLocation[i])
-				throw(ParsingError("line " + intToString(_nbLine) + " contains a redeclaration of an attribute."));
-			_argumentUsedLocation[i] = true;
+				throw(ParsingError("line " + intToString(_nbLine) + REDECLARATION));
+			if (lineSplitted[0] != "CGI")
+				_argumentUsedLocation[i] = true;
 			(this->*it->second)(lineSplitted);
 			return ;
 		}
 		i++;
 	}
-	throw(ParsingError("line " + intToString(_nbLine) + " has an incorrect variable declaration."));
+	throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VARIABLE));
 }
 
 void	Parsing::parseLineServerBlock()
@@ -100,7 +98,7 @@ void	Parsing::parseLineServerBlock()
 	std::vector<std::string> lineSplitted = splitString(_line, ' ');
 	
 	if (lineSplitted.size() < 2)
-		throw(ParsingError("line " + intToString(_nbLine) + " has no value and takes at least one."));
+		throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
 	
 	static std::map<std::string, function>  functionMap = initFunctionMap(SERVER_BLOCK);
 	int i = 0;
@@ -110,12 +108,12 @@ void	Parsing::parseLineServerBlock()
 		if (it->first == lineSplitted[0])
 		{
 			if (_argumentUsedServer[i])
-				throw(ParsingError("line " + intToString(_nbLine) + " contains a redeclaration of an attribute."));
+				throw(ParsingError("line " + intToString(_nbLine) + REDECLARATION));
 			_argumentUsedServer[i] = true;
 			(this->*it->second)(lineSplitted);
 			return ;
 		}
 		i++;
 	}
-	throw(ParsingError("line " + intToString(_nbLine) + " has an incorrect variable declaration."));
+	throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VARIABLE));
 }

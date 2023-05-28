@@ -89,8 +89,9 @@ class Request {
 		int getLineToken(std::string line);
 		const std::string getMethod(std::string buffer);
 		void directoryListing(DIR* directory, const std::string& dirName);
-		void executeCGI(std::string fileName);
+		void executeCGI(std::string fileName, char *executable);
 		void initializeEnvpCGI(void);
+		bool requestCGI(void);
 		bool parseChunkedBody(const std::string& buffer);
 
 	// Private member attributes

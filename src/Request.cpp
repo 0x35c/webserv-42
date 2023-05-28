@@ -3,9 +3,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>
-#include <ctime>
-
-static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv);
 
 Request::Request(void)
 	: _clientfd(-1), _method("NTM")
@@ -52,118 +49,31 @@ void Request::sendErrorResponse(void) {
 	send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
 }
 
-void Request::initializeEnvpCGI(void) {
-	_cgiEnv["SERVER_SOFTWARE"] = "BOZOSERVER/2.0";
-	_cgiEnv["SERVER_NAME"] = _serverConfig.server_name;
-	_cgiEnv["SERVER_PORT"] = _serverConfig.port;
-	_cgiEnv["SERVER_PROTOCOL"] = "HTTP/1.1";
-	_cgiEnv["REQUEST_METHOD"] = _method;
-	_cgiEnv["GATEWAY_INTERFACE"] = "CGI/1.1";
-	_cgiEnv["CONTENT_TYPE"] = _requestHeader[CONTENT_TYPE];
-	_cgiEnv["CONTENT_LENGTH"] = _requestHeader[CONTENT_LENGTH];
-	_cgiEnv["REMOTE_ADDR"] = "0.0.0.0";
-	_cgiEnv["PATH"] = _location->root;
-	_cgiEnv["HTTP_USER_AGENT"] = _requestHeader[USER_AGENT];
-}
-
-static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv) {
-	char **arrayEnvpVariable =  new char *[_cgiEnv.size() + 1];
-	int i = 0;
-	std::string *tmp;
-	std::map<std::string, std::string>::iterator it;
-	for (it = _cgiEnv.begin(); it != _cgiEnv.end(); it++) {
-		tmp = new std::string;
-		*tmp = it->first + "=" + it->second + "\0";
-		arrayEnvpVariable[i] = (char *)tmp->c_str();
-		i++;
-	}
-	arrayEnvpVariable[i] = NULL;
-	return (arrayEnvpVariable);
-}
-
-void Request::executeCGI(std::string fileName) {
-	initializeEnvpCGI();
-	_cgiEnv["SCRIPT_NAME"] = fileName;
-	_cgiEnv["URL"] = fileName;
-	if (pipe(_cgi.fds[0]) == -1
-		|| pipe(_cgi.fds[1]) == -1)
-		throw (Request::RequestException());
-	std::cout << "_query:" + _query +"\n";
-	int pid = fork();
-	if (pid == 0)
-	{
-		if (dup2(_cgi.fds[0][0], 0) == -1
-			|| dup2(_cgi.fds[1][1], 1) == -1
-			|| close(_cgi.fds[0][0]) == -1
-			|| close(_cgi.fds[0][1]) == -1
-			|| close(_cgi.fds[1][0]) == -1
-			|| close(_cgi.fds[1][1]) == -1)
-			throw (Request::RequestException());
-
-		/* if (_method == "POST") */
-		/* 	_query = _requestHeader[BODY]; */
-		_cgiEnv["QUERY_STRING"] = _query;
-		char *args[4] = {(char *)"/usr/bin/python3", (char *)(fileName.c_str()),
-						(char *)(_query.c_str()),NULL};
-		char **EnvpVariables = getEnvpInArray(_cgiEnv);
-		execve("/usr/bin/python3", args, EnvpVariables);
-		for (size_t i = 0; EnvpVariables[i]; i++)
-			delete EnvpVariables[i];
-		delete [] EnvpVariables;
-		exit(EXIT_FAILURE);
-	}
-	else if (pid != 0)
-	{
-		if (close(_cgi.fds[0][0]) == -1
-			|| close(_cgi.fds[0][1]) == -1
-			|| close(_cgi.fds[1][1]) == -1)
-			throw (Request::RequestException());
-		if (pid > 0)
-		{
-			_cgi.pid = pid;
-			_cgi.begin_time = std::time(NULL);
-		}
-		else if (pid < 0)
-		{
-			_cgi.inCGI = false;
-			if (close(_cgi.fds[1][0]) == -1)
-				throw (Request::RequestException());
-		}
-	}
-}
-
 void Request::respondToGetRequest(void) {
 	DIR* directory = opendir(_requestHeader[HEAD].c_str());
 	_isDirectory = false;
 	_cgi.inCGI = false;
 	if (directory == NULL) {
-		std::string fileName = _requestHeader[HEAD];
-		if (fileName.length() > 3 && fileName.substr(fileName.length() - 3) == ".py") {
-			_cgi.inCGI = true;
-			if (setStatusCode() == 400)
-				return (sendErrorResponse());
-			executeCGI(fileName);
-		}
-		else {
-			if (setStatusCode() == 400)
-				return (sendErrorResponse());
-			std::ifstream file(_requestHeader[HEAD].c_str(), std::ios::in | std::ios::binary);
+		if (requestCGI())
+			return ;
+		if (setStatusCode() == 400)
+			return (sendErrorResponse());
+		std::ifstream file(_requestHeader[HEAD].c_str(), std::ios::in | std::ios::binary);
 
-			file.seekg(0, std::ios::end);
-			std::streampos fileSize = file.tellg();
-			file.seekg(0, std::ios::beg);
+		file.seekg(0, std::ios::end);
+		std::streampos fileSize = file.tellg();
+		file.seekg(0, std::ios::beg);
 
-			std::ostringstream ss;
-			ss << "HTTP/1.1 " << _statusCode << "\r\n";
-			ss << "Content-type: " << _requestHeader[ACCEPT] << "\r\n";
-			ss << "Content-Length: " << fileSize << "\r\n\r\n";
-			ss << file.rdbuf();
+		std::ostringstream ss;
+		ss << "HTTP/1.1 " << _statusCode << "\r\n";
+		ss << "Content-type: " << _requestHeader[ACCEPT] << "\r\n";
+		ss << "Content-Length: " << fileSize << "\r\n\r\n";
+		ss << file.rdbuf();
 
-			send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
-			ss.str("");
-			ss.clear();
-			file.close();
-		}
+		send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
+		ss.str("");
+		ss.clear();
+		file.close();
 	}
 	else {
 		_isDirectory = true;
@@ -179,14 +89,8 @@ void Request::respondToPostRequest(void) {
 		return (sendErrorResponse());
 
 	_cgi.inCGI = false;
-	std::string fileName = _requestHeader[HEAD];
-	if (fileName.length() > 3 && fileName.substr(fileName.length() - 3) == ".py") {
-		_cgi.inCGI = true;
-		if (setStatusCode() == 400)
-			return (sendErrorResponse());
-		executeCGI(fileName);
+	if (requestCGI())
 		return ;
-	}
 	std::ostringstream ss;
 	if (_requestHeader[HEAD] != "") {
 		_requestHeader[LOCATION] = "/done.html";

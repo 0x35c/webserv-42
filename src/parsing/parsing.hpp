@@ -11,6 +11,14 @@
 #define LOCATION_BLOCK 1
 #define METHOD_BLOCK 2
 
+#define REDECLARATION " contains a redeclaration of an attribute."
+#define INCORRECT_VARIABLE " has an incorrect variable declaration."
+#define INCORRECT_VALUE " has an incorrect value."
+#define WRONG_NB_ARG " has wrong number of arguments."
+#define WRONG_EXTENSION	"configuration file must have \".conf\" extension."
+#define FILE_NOT_OPEN "can't open configuration file."
+#define SAME_ADDRESS "multiple server with same address."
+
 #include <string>
 #include <vector>
 #include <arpa/inet.h>
@@ -27,8 +35,8 @@ typedef struct s_location {
 	bool		acceptUploadedFile;
 	std::string	uploadedFilePath;
 	int			lines[4];
-	std::string executableCGI;
-	std::string extensionCGI;
+	std::vector<std::string> executableCGI;
+	std::vector<std::string> extensionCGI;
 
 } t_location;
 

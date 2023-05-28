@@ -5,6 +5,7 @@ SRCS	:= main.cpp\
 		   Server.cpp\
 		   Request.cpp\
 		   parseRequest.cpp\
+		   CGI.cpp\
 		   directoryListing.cpp\
 		   statusCode.cpp\
 		   parsing/Parsing.cpp\

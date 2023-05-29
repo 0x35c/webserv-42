@@ -4,34 +4,25 @@
 #include <cstdlib>
 #include <unistd.h>
 
-#include <iostream>
-void debug(t_location & location)
-{
-	std::cout << "LOCATION PATH:" + location.locationPath + "\n";
-	std::cout << "ROOT:" + location.root + "\n";
-	std::cout << "INDEX:" + location.index + "\n";
-	std::cout << "DIRECTORY LISTING:" << location.directoryListing << "\n";
-	std::cout << "REDIRECTION PATH:" << location.redirectionPath << "\n";
-	std::cout << "REDIRECTION CODE:" << location.redirectionCode << "\n";
-	std::cout << "ACCEPT UPLOADED FILE:" << location.acceptUploadedFile << "\n";
-	std::cout << "UPLOADED FILE PATH:" + location.uploadedFilePath + "\n";
-	std::cout << "GET:" << location.methodsAllowed[0] << "\n";
-	std::cout << "POST:" << location.methodsAllowed[1] << "\n";
-	std::cout << "DELETE:" << location.methodsAllowed[2] << "\n";
-}
-
 //LOCATION BLOCK ATTRIBUTE
 void Parsing::testLocationValue()
 {
-	std::cout << _location.root + "\n";
 	if (!isValidPathDir(_location.root))
 		throw(ParsingError("line " + intToString(_location.lines[ROOT]) + INCORRECT_VALUE));
+	bool resetRoot = false;
+	if (_location.root == _location.locationPath)
+	{
+		_location.root = "";
+		resetRoot = true;
+	}
 	if (!isValidPath(_location.root + _location.redirectionPath))
 		throw(ParsingError("line " + intToString(_location.lines[REDIRECTION]) + INCORRECT_VALUE));
 	if (!isValidPath(_location.root + _location.index))
 		throw(ParsingError("line " + intToString(_location.lines[INDEX]) + INCORRECT_VALUE));
 	if (!isValidPathDir(_location.root + _location.uploadedFilePath))
 		throw(ParsingError("line " + intToString(_location.lines[UPLOAD]) + INCORRECT_VALUE));
+	if (resetRoot)
+		_location.root = _location.locationPath;
 }
 
 void Parsing::CGIAttribute(const std::vector<std::string> & lineSplit)

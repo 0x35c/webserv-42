@@ -2,6 +2,22 @@
 #include <fstream>
 #include <cstring>
 
+#include <iostream>
+void debug(t_location & location)
+{
+	std::cout << "LOCATION PATH:" + location.locationPath + "\n";
+	std::cout << "ROOT:" + location.root + "\n";
+	std::cout << "INDEX:" + location.index + "\n";
+	std::cout << "DIRECTORY LISTING:" << location.directoryListing << "\n";
+	std::cout << "REDIRECTION PATH:" << location.redirectionPath << "\n";
+	std::cout << "REDIRECTION CODE:" << location.redirectionCode << "\n";
+	std::cout << "ACCEPT UPLOADED FILE:" << location.acceptUploadedFile << "\n";
+	std::cout << "UPLOADED FILE PATH:" + location.uploadedFilePath + "\n";
+	std::cout << "GET:" << location.methodsAllowed[0] << "\n";
+	std::cout << "POST:" << location.methodsAllowed[1] << "\n";
+	std::cout << "DELETE:" << location.methodsAllowed[2] << "\n\n";
+}
+
 void	Parsing::checkDifferentServer()
 {
 	for (size_t i = 0; i < _servers.size(); i++)
@@ -50,6 +66,7 @@ void Parsing::locationBlock()
 		_inMethodBlock = true;
 	else if (_line == "}")
 	{
+		//debug(_location);
 		testLocationValue();
 		_server.locations.push_back(_location);
 		_inLocationBlock = false;

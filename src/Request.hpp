@@ -13,6 +13,11 @@
 
 #define BUFFER_SIZE 8192
 #define DEBUG 1
+
+#define INFINITE_LOOP_HTML "<html><body><h1>Infinite loop in CGI</h1></body></html>"
+#define EXECUTION_CGI_FAILED_HTML "Content-type: text/html\n\n<html><body><h1>execution of CGI failed</h1></body></html>"
+#define BAD_CGI_HEADER_HTML "Content-type: text/html\n\n<html><body><h1>bad CGI header</h1></body></html>"
+
 typedef std::map<int, std::string> strMap;
 typedef std::pair<int, std::string> strPair;
 

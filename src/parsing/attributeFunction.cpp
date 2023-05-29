@@ -23,13 +23,14 @@ void debug(t_location & location)
 //LOCATION BLOCK ATTRIBUTE
 void Parsing::testLocationValue()
 {
+	std::cout << _location.root + "\n";
 	if (!isValidPathDir(_location.root))
 		throw(ParsingError("line " + intToString(_location.lines[ROOT]) + INCORRECT_VALUE));
 	if (!isValidPath(_location.root + _location.redirectionPath))
 		throw(ParsingError("line " + intToString(_location.lines[REDIRECTION]) + INCORRECT_VALUE));
 	if (!isValidPath(_location.root + _location.index))
 		throw(ParsingError("line " + intToString(_location.lines[INDEX]) + INCORRECT_VALUE));
-	if (!isValidPathDir(_location.uploadedFilePath))
+	if (!isValidPathDir(_location.root + _location.uploadedFilePath))
 		throw(ParsingError("line " + intToString(_location.lines[UPLOAD]) + INCORRECT_VALUE));
 }
 

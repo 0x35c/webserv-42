@@ -64,7 +64,7 @@ void Server::checkCGI(void)
 			stopCGI = true;
 			if (kill(it->second.getCGI().pid, SIGKILL) < 0)
 				throw (ServerException());
-			std::string InfiniteLoopHTML = "<html><body><h1>Infinite loop in CGI</h1></body></html>";
+			std::string InfiniteLoopHTML = INFINITE_LOOP_HTML;
 			ss << "HTTP/1.1 508 Loop Detected\r\n";
 			ss << "Content-type: text/html\r\n";
 			ss << "Content-Length: " << InfiniteLoopHTML.size() << "\r\n\r\n";
@@ -79,9 +79,9 @@ void Server::checkCGI(void)
 				throw (ServerException());
 			std::string responseCGI = buffer;
 			if (responseCGI.empty())
-				responseCGI = "Content-type: text/html\n\n<html><body><h1>execution of CGI failed</h1></body></html>";
+				responseCGI = EXECUTION_CGI_FAILED_HTML;
 			if (responseCGI.find("\n\n") == std::string::npos || responseCGI.find("Content-type: text/html") == std::string::npos)
-				responseCGI = "Content-type: text/html\n\n<html><body><h1>bad CGI header</h1></body></html>";
+				responseCGI = BAD_CGI_HEADER_HTML;
 			std::string tmpHeader = responseCGI.substr(0, responseCGI.find("\n\n") + 1);
 			std::string tmpBody = responseCGI.substr(responseCGI.find("\n\n") + 2, std::string::npos);
 			size_t contentLength = tmpBody.length();

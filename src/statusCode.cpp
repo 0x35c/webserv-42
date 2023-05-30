@@ -15,49 +15,52 @@ static std::string handleDirectoryCode(strMap& _requestHeader) {
 
 int Request::setStatusCode(void) {
 	std::ifstream file;
-
+	
+	std::cout << "getmethod: " << _location->methodsAllowed[GET] << "\n";
+	std::cout << "index: " + _location->index << "\n";
+	std::cout << "head" + _requestHeader[HEAD] + "\n";
 	file.open(_requestHeader[HEAD].c_str());
 	if (_method == "GET" && _location->methodsAllowed[GET] == false) {
 		_statusCode = "405 Method Not Allowed";
-		_requestHeader[HEAD] = "src/405";
+		_requestHeader[HEAD] = "includes/defaultPages/405";
 		return (400);
 	}
 	else if (_method == "POST" && _location->methodsAllowed[POST] == false) {
 		_statusCode = "405 Method Not Allowed";
-		_requestHeader[HEAD] = "src/405";
+		_requestHeader[HEAD] = "includes/defaultPages/405";
 		return (400);
 	}
 	else if (_method == "DELETE" && _location->methodsAllowed[DELETE] == false) {
 		_statusCode = "405 Method Not Allowed";
-		_requestHeader[HEAD] = "src/405";
-		return (400);
-	}
-	else if (_method == "POST" && _location->acceptUploadedFile == false) {
-		_statusCode = "403 Forbidden";
-		_requestHeader[HEAD] = "src/403";
+		_requestHeader[HEAD] = "includes/defaultPages/405";
 		return (400);
 	}
 	else if (_method == "POST" && std::atoll(_requestHeader[CONTENT_LENGTH].c_str()) > _serverConfig.maxFileSizeUpload) {
 		_statusCode = "413 Content Too Large";
-		_requestHeader[HEAD] = "src/413";
+		_requestHeader[HEAD] = "includes/defaultPages/413";
+		return (400);
+	}
+	else if (_method == "POST" && _location->acceptUploadedFile == false) {
+		_statusCode = "403 Forbidden";
+		_requestHeader[HEAD] = "includes/defaultPages/403";
 		return (400);
 	}
 	else if (!file && _method != "POST") {
 		_statusCode = "404 Not Found";
-		_requestHeader[HEAD] = "src/404";
+		_requestHeader[HEAD] = _serverConfig.errpage;
 		return (400);
 	}
 	else if (_method == "GET" && _isDirectory == true) {
 		_statusCode = handleDirectoryCode(_requestHeader);
 		if (_location->directoryListing == false) {
 			_statusCode = "403 Forbidden";
-			_requestHeader[HEAD] = "src/403";
+			_requestHeader[HEAD] = "includes/defaultPages/403";
 			return (400);
 		}
 	}
 	else if (_method == "POST" && _validRequest == false) {
 		_statusCode = "400 Bad Request";
-		_requestHeader[HEAD] = "src/400";
+		_requestHeader[HEAD] = "includes/defaultPages/400";
 		_validRequest = true;
 	}
 	else if (_method == "POST" && _cgi.inCGI == false)

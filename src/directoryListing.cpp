@@ -19,7 +19,7 @@ static void addElement(std::string &list, std::string element)
 
 void Request::directoryListing(DIR* directory, const std::string& dirName) {
 	std::string tmpHTML;
-	std::ifstream htmlFile("www/directoryListing.html");
+	std::ifstream htmlFile("includes/defaultPages/directoryListing.html");
 	if (htmlFile.is_open()) {
 		std::string line;
 		while (getline(htmlFile, line)) {

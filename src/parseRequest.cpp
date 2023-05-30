@@ -78,20 +78,24 @@ void Request::processLine(std::string line, int lineToken) {
 		_requestHeader.insert(strPair(lineToken, str));
 }
 
-static t_location* getLocation(const std::string& path, std::vector<t_location>& locations) {
-	for (std::vector<t_location>::iterator it = locations.begin(); it != locations.end(); it++) {
-		if (path == it->locationPath)
-			return (&(*it));
+static t_location* getLocation(const std::string& path, std::vector<t_location*> locations) {
+	std::cout << "Path: " << path << std::endl;
+	for (std::vector<t_location*>::iterator it = locations.begin(); it != locations.end(); it++) {
+		if (path == (*it)->locationPath)
+			return (*it);
 	}
-	return (&(*locations.begin()));
+	return (*(locations.begin()));
 }
 
 int Request::getLineToken(std::string line) {
 	if (line.find("POST") != std::string::npos || line.find("GET") != std::string::npos || line.find("DELETE") != std::string::npos) {
 		std::string path = getToken(line, ' ', 2);
-		size_t pos = path.find("/", 1);
-		if (pos != std::string::npos && closedir(opendir(_requestHeader[HEAD].c_str())) == -1)
+		size_t pos = path.rfind("/", path.length() - 2);
+		if (pos != std::string::npos && closedir(opendir(_requestHeader[HEAD].c_str())) == -1) {
 			path = path.substr(0, pos);
+			if (path[0] == '/')
+				path.erase(0, 1);
+		}
 		else
 			path = "/";
 		_location = getLocation(path, _serverConfig.locations);
@@ -174,6 +178,11 @@ void Request::parseHeader(const std::string& buffer) {
 		i++;
 	}
 	line.clear();
+	/* if (_method == "POST" && std::atoll(_requestHeader[CONTENT_LENGTH].c_str()) > _serverConfig.maxFileSizeUpload) { */
+	/* 	_statusCode = "413 Content Too Large"; */
+	/* 	_requestHeader[HEAD] = "includes/defaultPages/413"; */
+	/* 	respondToRequest(); */
+	/* } */
 	size_t pos = buffer.find("\r\n\r\n");
 	line = buffer.substr(pos + 4, std::string::npos);
 	_requestHeader[BODY] = line;

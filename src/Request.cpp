@@ -92,11 +92,10 @@ void Request::respondToPostRequest(void) {
 	if (requestCGI())
 		return ;
 	std::ostringstream ss;
-	if (_requestHeader[HEAD] != "") {
-		_requestHeader[LOCATION] = "/done.html";
-	}
-	else
-		_requestHeader[LOCATION] = "/";
+	std::cout << "FILENAME: " << _requestHeader[HEAD] << std::endl;
+	std::cout << "Location: " << _location->uploadedFilePath << std::endl;
+
+	_requestHeader[LOCATION] = "/";
 	ss << "HTTP/1.1 " << _statusCode << "\r\n";
 	ss << "Content-type: " << _requestHeader[ACCEPT] << "\r\n";
 	if (_statusCode == "302 Redirect")

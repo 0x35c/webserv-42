@@ -8,9 +8,9 @@ const std::string ParsingError(std::string error) throw()
 	return ("parsing error: " + error + "\n");
 }
 
-const std::string intToString(const int number)
+const std::string intToString(int number)
 {
-	std::ostringstream stringStream;
+	std::stringstream stringStream;
 	stringStream << number;
 	return (stringStream.str());
 }

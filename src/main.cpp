@@ -16,14 +16,14 @@ int	main(int argc, char **argv)
 {
 	signal(SIGINT, signal_handler);
 
-	std::vector<t_server> serverConfigFile;
+	std::vector<t_server*> serverConfigFile;
 	try
 	{
 		Parsing parser;
 		if (argc == 2)
 			serverConfigFile = parser.parseConfFile(argv[1]);
 		else
-			serverConfigFile = parser.parseConfFile("conf/easy.conf");
+			serverConfigFile = parser.parseConfFile("conf/real.conf");
 	}
 	catch(const std::string exception)
 	{
@@ -33,8 +33,10 @@ int	main(int argc, char **argv)
 	Server server;
 	try
 	{
-		for (std::vector<t_server>::iterator it = serverConfigFile.begin(); it != serverConfigFile.end(); ++it)
-			server.addAddress(*it);
+		for (std::vector<t_server*>::iterator it = serverConfigFile.begin(); it != serverConfigFile.end(); ++it) {
+			server.addAddress(**it);
+			delete *it;
+		}
 		server.start();
 	}
 	catch(const std::exception & e)

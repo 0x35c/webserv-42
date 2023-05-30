@@ -58,7 +58,11 @@ Server::~Server()
 		it++;
 	}
 	for (socketMap::iterator it = _sockets.begin(); it != _sockets.end(); ++it)
+	{
 		close(it->first);
+		for (std::vector<t_location*>::iterator itVector = it->second.locations.begin(); itVector != it->second.locations.end(); ++itVector)
+			delete *itVector;
+	}
 	for (requestMap::iterator it = _requests.begin(); it != _requests.end(); ++it)
 		close(it->first);
 }
@@ -125,7 +129,7 @@ bool Server::_processRequest(int clientFd, Request &request, fd_set* writeSet)
 		close(clientFd);
 		FD_CLR(clientFd, &_readSet);
 		FD_CLR(clientFd, &_writeSet);
-		if (rc < 0)
+		if (rc == -1)
 			std::cerr << "error: " << strerror(errno) << "\n";
 		return true;
 	}

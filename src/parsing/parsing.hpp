@@ -49,7 +49,7 @@ typedef struct s_server {
 	std::string 			errpage;
 	int						maxFileSizeUpload;
 	sockaddr_in				socketAddress;
-	std::vector<t_location>	locations;
+	std::vector<t_location*>	locations;
 } t_server;
 
 class Parsing;
@@ -61,7 +61,7 @@ class Parsing
 	public:
 		//parseConfFile.cpp
 		
-		const std::vector<t_server> parseConfFile(const std::string path);
+		const std::vector<t_server*>& parseConfFile(const std::string &path);
 		
 		//Parsing.cpp
 		
@@ -79,7 +79,7 @@ class Parsing
 		 void serverBlock();
 		 void locationBlock();
 		 void methodBlock();
-		 const std::vector<t_server> readConfFile(std::ifstream & confFile);
+		 const std::vector<t_server*>& readConfFile(std::ifstream & confFile);
 		 void checkDifferentServer();
 
 		//parseLine.cpp
@@ -122,9 +122,9 @@ class Parsing
 		bool _inMethodBlock;
 		bool _argumentUsedMethod[3];
 		std::string _line;
-		std::vector<t_server> _servers;
-		t_server _server;
-		t_location _location;
+		std::vector<t_server*> _servers;
+		t_server *_server;
+		t_location *_location;
 };
 	
 //utils.cpp
@@ -135,5 +135,5 @@ bool 							isValidPathDir(const std::string string);
 void							trimString(std::string & string, const char *charset);
 size_t 							countChar(const std::string string, const char delimiter);
 const std::string 				ParsingError(std::string error) throw();
-const std::string				intToString(const int number);
+const std::string				intToString(int number);
 const std::vector<std::string>	splitString(const std::string string, const char delimiter);

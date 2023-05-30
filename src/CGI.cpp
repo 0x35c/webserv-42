@@ -74,7 +74,7 @@ void Server::checkCGI(void)
 		{
 			stopCGI = true;
 			char buffer[BUFFER_SIZE] = {0};
-			int fileSize = read(it->second.getCGI().fds[1][0], buffer, BUFFER_SIZE);
+			int fileSize = recv(it->second.getCGI().fds[1][0], buffer, BUFFER_SIZE, 0);
 			if (fileSize < 0)
 				throw (ServerException());
 			std::string responseCGI = buffer;
@@ -95,7 +95,7 @@ void Server::checkCGI(void)
 			if (close(it->second.getCGI().fds[1][0]) == -1)
 				throw (ServerException());
 			it->second.getCGI().inCGI = false;
-			if (write(it->second.getClientfd(), ss.str().c_str(), ss.str().size()) < 0)
+			if (send(it->second.getClientfd(), ss.str().c_str(), ss.str().size(), 0) < 0)
 				throw (ServerException());
 			ss.str("");
 			ss.clear();

@@ -112,7 +112,7 @@ class Request {
 		std::map<std::string, std::string> _cgiEnv;
 		t_cgi _cgi;
 		t_server _serverConfig;
-		t_location* _location;
+		t_location *_location;
 		bool _chunkBufferFull;
 		std::string _chunkBuffer;
 };

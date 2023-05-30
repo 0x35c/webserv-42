@@ -16,10 +16,10 @@ int	main(int argc, char **argv)
 {
 	signal(SIGINT, signal_handler);
 
-	std::vector<t_server*> serverConfigFile;
+	std::vector<t_server> serverConfigFile;
+	Parsing parser;
 	try
 	{
-		Parsing parser;
 		if (argc == 2)
 			serverConfigFile = parser.parseConfFile(argv[1]);
 		else
@@ -33,9 +33,8 @@ int	main(int argc, char **argv)
 	Server server;
 	try
 	{
-		for (std::vector<t_server*>::iterator it = serverConfigFile.begin(); it != serverConfigFile.end(); ++it) {
-			server.addAddress(**it);
-			delete *it;
+		for (std::vector<t_server>::iterator it = serverConfigFile.begin(); it != serverConfigFile.end(); ++it) {
+			server.addAddress(*it);
 		}
 		server.start();
 	}

@@ -58,11 +58,7 @@ Server::~Server()
 		it++;
 	}
 	for (socketMap::iterator it = _sockets.begin(); it != _sockets.end(); ++it)
-	{
 		close(it->first);
-		for (std::vector<t_location*>::iterator itVector = it->second.locations.begin(); itVector != it->second.locations.end(); ++itVector)
-			delete *itVector;
-	}
 	for (requestMap::iterator it = _requests.begin(); it != _requests.end(); ++it)
 		close(it->first);
 }

@@ -78,13 +78,12 @@ void Request::processLine(std::string line, int lineToken) {
 		_requestHeader.insert(strPair(lineToken, str));
 }
 
-static t_location* getLocation(const std::string& path, std::vector<t_location*> locations) {
-	std::cout << "Path: " << path << std::endl;
-	for (std::vector<t_location*>::iterator it = locations.begin(); it != locations.end(); it++) {
-		if (path == (*it)->locationPath)
-			return (*it);
+static t_location* getLocation(const std::string& path, std::vector<t_location>& locations) {
+	for (std::vector<t_location>::iterator it = locations.begin(); it != locations.end(); it++) {
+		if (path == it->locationPath)
+			return (&(*it));
 	}
-	return (*(locations.begin()));
+	return (&(*(locations.begin())));
 }
 
 int Request::getLineToken(std::string line) {

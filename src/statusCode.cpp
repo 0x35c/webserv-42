@@ -58,7 +58,7 @@ int Request::setStatusCode(void) {
 			return (400);
 		}
 	}
-	else if (_method == "POST" && _validRequest == false) {
+	else if (_validRequest == false || _method == "FORBIDDEN") {
 		_statusCode = "400 Bad Request";
 		_requestHeader[HEAD] = "includes/defaultPages/400";
 		_validRequest = true;

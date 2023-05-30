@@ -24,8 +24,8 @@ void	Parsing::checkDifferentServer()
 	{
 		for (size_t j = i + 1; j < _servers.size(); j++)
 		{
-			if (_servers[i]->port == _servers[j]->port
-				&& _servers[i]->host == _servers[j]->host)
+			if (_servers[i].port == _servers[j].port
+				&& _servers[i].host == _servers[j].host)
 				throw (ParsingError(SAME_ADDRESS));
 		}
 	}
@@ -35,20 +35,18 @@ void	Parsing::noBlock()
 {
 	if (_line.length() > 0 && _line != "server {")
 		throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
-	_server = new t_server;
 	_inServerBlock = true;
 	initializeServer();
 }
 
 void Parsing::serverBlock()
 {
-	if (strncmp(_line.c_str(), "location", 8) == 0)
+	if (strncmp(_line.c_str(), "location ", 9) == 0)
 	{
 		std::vector<std::string> lineSplitted = splitString(_line, ' ');
 		if (lineSplitted.size() != 3)
 			throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
-		_location = new t_location;
-		_location->locationPath = lineSplitted[1];
+		_location.locationPath = lineSplitted[1];
 		initializeLocation();
 		_inLocationBlock = true;
 	}
@@ -64,13 +62,13 @@ void Parsing::serverBlock()
 
 void Parsing::locationBlock()
 {
-	if (strncmp(_line.c_str(), "methods", 7) == 0)
+	if (strncmp(_line.c_str(), "methods ", 8) == 0)
 		_inMethodBlock = true;
 	else if (_line == "}")
 	{
 		//debug(*_location);
 		testLocationValue();
-		_server->locations.push_back(_location);
+		_server.locations.push_back(_location);
 		_inLocationBlock = false;
 		resetBlockArg(LOCATION_BLOCK);
 	}
@@ -89,7 +87,7 @@ void Parsing::methodBlock()
 		parseLineMethodBlock();
 }
 
-const std::vector<t_server*>& Parsing::readConfFile(std::ifstream & confFile)
+const std::vector<t_server>& Parsing::readConfFile(std::ifstream & confFile)
 {
 	while (std::getline(confFile, _line))
 	{
@@ -108,11 +106,12 @@ const std::vector<t_server*>& Parsing::readConfFile(std::ifstream & confFile)
 			methodBlock();
 	}
 	confFile.close();
+	_configFileFine = true;
 	checkDifferentServer();
 	return (_servers);
 }
 
-const std::vector<t_server*>& Parsing::parseConfFile(const std::string &path)
+const std::vector<t_server>& Parsing::parseConfFile(const std::string &path)
 {
 	size_t extension = path.find(".conf");
 	if (extension != std::string::npos && extension + 5 != path.length())

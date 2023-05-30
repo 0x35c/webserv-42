@@ -7,22 +7,22 @@
 //LOCATION BLOCK ATTRIBUTE
 void Parsing::testLocationValue()
 {
-	if (!isValidPathDir(_location->root))
-		throw(ParsingError("line " + intToString(_location->lines[ROOT]) + INCORRECT_VALUE));
+	if (!isValidPathDir(_location.root))
+		throw(ParsingError("line " + intToString(_location.lines[ROOT]) + INCORRECT_VALUE));
 	bool resetRoot = false;
-	if (_location->root == _location->locationPath)
+	if (_location.root == _location.locationPath)
 	{
-		_location->root = "";
+		_location.root = "";
 		resetRoot = true;
 	}
-	if (!isValidPath(_location->root +_location->redirectionPath))
-		throw(ParsingError("line " + intToString(_location->lines[REDIRECTION]) + INCORRECT_VALUE));
-	if (!isValidPath(_location->root +_location->index))
-		throw(ParsingError("line " + intToString(_location->lines[INDEX]) + INCORRECT_VALUE));
-	if (!isValidPathDir(_location->root +_location->uploadedFilePath))
-		throw(ParsingError("line " + intToString(_location->lines[UPLOAD]) + INCORRECT_VALUE));
+	if (!isValidPath(_location.root +_location.redirectionPath))
+		throw(ParsingError("line " + intToString(_location.lines[REDIRECTION]) + INCORRECT_VALUE));
+	if (!isValidPath(_location.root +_location.index))
+		throw(ParsingError("line " + intToString(_location.lines[INDEX]) + INCORRECT_VALUE));
+	if (!isValidPathDir(_location.root +_location.uploadedFilePath))
+		throw(ParsingError("line " + intToString(_location.lines[UPLOAD]) + INCORRECT_VALUE));
 	if (resetRoot)
-		_location->root = _location->locationPath;
+		_location.root = _location.locationPath;
 }
 
 void Parsing::CGIAttribute(const std::vector<std::string> & lineSplit)
@@ -31,8 +31,8 @@ void Parsing::CGIAttribute(const std::vector<std::string> & lineSplit)
 		throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VALUE));
 	if (access(lineSplit[1].c_str(), 0) != 0)
 		throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VALUE));
-	_location->executableCGI.push_back(lineSplit[1]);
-	_location->extensionCGI.push_back(lineSplit[2]);
+	_location.executableCGI.push_back(lineSplit[1]);
+	_location.extensionCGI.push_back(lineSplit[2]);
 }
 
 void Parsing::methodAttribute(const std::vector<std::string> & lineSplit)
@@ -42,15 +42,15 @@ void Parsing::methodAttribute(const std::vector<std::string> & lineSplit)
 
 void Parsing::returnAttribute(const std::vector<std::string> & lineSplit)
 {
-	_location->redirectionCode = strtol(lineSplit[1].c_str(), NULL, 10);
+	_location.redirectionCode = strtol(lineSplit[1].c_str(), NULL, 10);
 	if (errno != 0)
 		throw(ParsingError(strerror(errno)));
 	else if (!isDigit(lineSplit[1]))
 		throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VALUE));
 	else if (lineSplit.size() != 3)
 		throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
-	_location->redirectionPath = lineSplit[2];
-	_location->lines[REDIRECTION] = _nbLine;
+	_location.redirectionPath = lineSplit[2];
+	_location.lines[REDIRECTION] = _nbLine;
 }
 
 void Parsing::rootAttribute(const std::vector<std::string> & lineSplit)
@@ -60,31 +60,31 @@ void Parsing::rootAttribute(const std::vector<std::string> & lineSplit)
 		tmp = lineSplit[1] + "/";
 	else
 		tmp = lineSplit[1];
-	_location->root = tmp;
-	_location->lines[ROOT] = _nbLine;
+	_location.root = tmp;
+	_location.lines[ROOT] = _nbLine;
 }
 
 void Parsing::directoryListingAttribute(const std::vector<std::string> & lineSplit)
 {
 	if (lineSplit[1] == "ON")
-		_location->directoryListing = true;
+		_location.directoryListing = true;
 	else if (lineSplit[1] == "OFF")
-		_location->directoryListing = false;
+		_location.directoryListing = false;
 	else
 		throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VALUE));
 }
 
 void Parsing::indexAttribute(const std::vector<std::string> & lineSplit)
 {
-	_location->index = lineSplit[1];
-	_location->lines[INDEX] = _nbLine;
+	_location.index = lineSplit[1];
+	_location.lines[INDEX] = _nbLine;
 }
 void Parsing::acceptUploadedFileAttribute(const std::vector<std::string> & lineSplit)
 {
 	if (lineSplit[1] == "ON")
-		_location->acceptUploadedFile = true;
+		_location.acceptUploadedFile = true;
 	else if (lineSplit[1] == "OFF")
-		_location->acceptUploadedFile = false;
+		_location.acceptUploadedFile = false;
 	else
 		throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VALUE));
 }
@@ -96,8 +96,8 @@ void Parsing::saveUploadedFileAttribute(const std::vector<std::string> & lineSpl
 		tmp = lineSplit[1] + "/";
 	else
 		tmp = lineSplit[1];
-	_location->uploadedFilePath = tmp;
-	_location->lines[UPLOAD] = _nbLine;
+	_location.uploadedFilePath = tmp;
+	_location.lines[UPLOAD] = _nbLine;
 }
 
 //SERVER BLOCK ATTRIBUTE
@@ -114,10 +114,10 @@ void Parsing::listenAttribute(const std::vector<std::string> & lineSplit)
 		if (!isDigit(portSplit[j]))
 			throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VALUE));
 	}
-	_server->host = lineSplit[2];
+	_server.host = lineSplit[2];
 	if (!isDigit(lineSplit[1]))
 		throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VALUE));
-	_server->port = strtol(lineSplit[1].c_str(), NULL, 10);
+	_server.port = strtol(lineSplit[1].c_str(), NULL, 10);
 	if (errno != 0)
 		throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VALUE));
 }
@@ -125,19 +125,19 @@ void Parsing::listenAttribute(const std::vector<std::string> & lineSplit)
 void Parsing::serverNameAttribute(const std::vector<std::string> & lineSplit)
 {
 	(void)_nbLine;
-	_server->server_name = lineSplit[1];
+	_server.server_name = lineSplit[1];
 }
 
 void Parsing::errpageAttribute(const std::vector<std::string> & lineSplit)
 {
 	if (!isValidPath(lineSplit[1]))
 		throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VALUE));
-	_server->errpage = lineSplit[1];
+	_server.errpage = lineSplit[1];
 }
 
 void Parsing::maxFilesizeUploadAttribute(const std::vector<std::string> & lineSplit)
 {
-	_server->maxFileSizeUpload = strtol(lineSplit[1].c_str(), NULL, 10);
+	_server.maxFileSizeUpload = strtol(lineSplit[1].c_str(), NULL, 10);
 	if (errno != 0)
 		throw(ParsingError(strerror(errno)));
 	else if (!isDigit(lineSplit[1]))
@@ -149,6 +149,6 @@ void Parsing::locationAttribute(const std::vector<std::string> & lineSplit)
 	initializeLocation();
 	if (!isValidPath(lineSplit[1]))
 		throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VALUE));
-	_location->locationPath = lineSplit[1];
-	_server->locations.push_back(_location);
+	_location.locationPath = lineSplit[1];
+	_server.locations.push_back(_location);
 }

@@ -59,9 +59,9 @@ void	Parsing::parseLineMethodBlock()
 				throw(ParsingError("line " + intToString(_nbLine) + REDECLARATION));
 			_argumentUsedMethod[i] = true;
 			if (lineSplitted[1] == "ON")
-				_location->methodsAllowed[i] = true;
+				_location.methodsAllowed[i] = true;
 			else if (lineSplitted[1] == "OFF")
-				_location->methodsAllowed[i] = false;
+				_location.methodsAllowed[i] = false;
 			else
 				throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VALUE));
 			return;

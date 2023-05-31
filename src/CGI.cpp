@@ -38,10 +38,12 @@ bool Request::requestCGI()
 	for (size_t i = 0; i < _location->executableCGI.size(); ++i)
 	{
 		if (fileName.length() > _location->extensionCGI[i].length() && fileName.substr(fileName.length() - _location->extensionCGI[i].length()) == _location->extensionCGI[i]) {
+			_cgi.inCGI = true;
 			executeCGI(fileName, (char *)_location->executableCGI[i].c_str());
 			return (true);
 		}
 	}
+	_cgi.inCGI = false;
 	return (false);
 }
 
@@ -66,6 +68,7 @@ void Server::checkCGI(void)
 		}
 		else if (waitpid(it->second.getCGI().pid, NULL, WNOHANG) > 0)
 		{
+			std::string statusCode = it->second.getStatusCode();
 			stopCGI = true;
 			char buffer[BUFFER_SIZE] = {0};
 			int fileSize = read(it->second.getCGI().fds[1][0], buffer, BUFFER_SIZE);
@@ -73,13 +76,19 @@ void Server::checkCGI(void)
 				throw (Request::RequestException());
 			std::string responseCGI = buffer;
 			if (responseCGI.empty())
+			{
+				statusCode = "502 Bad Gateway";
 				responseCGI = EXECUTION_CGI_FAILED_HTML;
-			if (responseCGI.find("\n\n") == std::string::npos || responseCGI.find("Content-Type: text/html") == std::string::npos)
+			}
+			else if (responseCGI.find("\n\n") == std::string::npos || responseCGI.find("Content-Type: text/html") == std::string::npos)
+			{
+				statusCode = "502 Bad Gateway";
 				responseCGI = BAD_CGI_HEADER_HTML;
+			}
 			std::string tmpHeader = responseCGI.substr(0, responseCGI.find("\n\n") + 1);
 			std::string tmpBody = responseCGI.substr(responseCGI.find("\n\n") + 2, std::string::npos);
 			size_t contentLength = tmpBody.length();
-			ss << "HTTP/1.1 " << it->second.getStatusCode() << "\r\n";
+			ss << "HTTP/1.1 " << statusCode << "\r\n";
 			ss << tmpHeader;
 			ss << "Content-Length: " << contentLength << "\r\n\r\n";
 			ss << tmpBody;

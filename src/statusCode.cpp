@@ -59,6 +59,7 @@ int Request::setStatusCode(void) {
 		_statusCode = "400 Bad Request";
 		_requestHeader[HEAD] = "includes/defaultPages/400";
 		_validRequest = true;
+		return (400);
 	}
 	else if (_method == "POST" && _cgi.inCGI == false)
 		_statusCode = "302 Redirect";

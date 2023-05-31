@@ -38,11 +38,6 @@ bool Request::requestCGI()
 	for (size_t i = 0; i < _location->executableCGI.size(); ++i)
 	{
 		if (fileName.length() > _location->extensionCGI[i].length() && fileName.substr(fileName.length() - _location->extensionCGI[i].length()) == _location->extensionCGI[i]) {
-			if (setStatusCode() == 400)
-			{
-				sendErrorResponse();
-				return (false);
-			}
 			executeCGI(fileName, (char *)_location->executableCGI[i].c_str());
 			return (true);
 		}

@@ -18,6 +18,8 @@
 #define EXECUTION_CGI_FAILED_HTML "Content-type: text/html\n\n<html><body><h1>execution of CGI failed</h1></body></html>"
 #define BAD_CGI_HEADER_HTML "Content-type: text/html\n\n<html><body><h1>bad CGI header</h1></body></html>"
 
+void trimString(std::string& string, const char* charset);
+
 typedef std::map<int, std::string> strMap;
 typedef std::pair<int, std::string> strPair;
 
@@ -87,14 +89,14 @@ class Request {
 		void respondToDeleteRequest(void);
 		void sendErrorResponse(void);
 		void errorOnRequest(void);
-		void processLine(std::string line, int lineToken);
+		void processLine(const std::string& line, int lineToken);
 		void parseHeader(const std::string& request);
 		bool parseBody(const std::string& buffer);
 		int setStatusCode(void);
-		int getLineToken(std::string line);
+		int getLineToken(const std::string& line);
 		const std::string getMethod(std::string buffer);
 		void directoryListing(DIR* directory, const std::string& dirName);
-		void executeCGI(std::string fileName, char *executable);
+		void executeCGI(const std::string& fileName, char *executable);
 		void initializeEnvpCGI(void);
 		bool requestCGI(void);
 		bool parseChunkedBody(const std::string& buffer);

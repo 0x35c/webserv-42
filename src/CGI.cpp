@@ -32,7 +32,7 @@ static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv) {
 	return (arrayEnvpVariable);
 }
 
-bool Request::requestCGI()
+bool Request::requestCGI(void)
 {
 	std::string fileName = _requestHeader[HEAD];
 	for (size_t i = 0; i < _location->executableCGI.size(); ++i)
@@ -114,7 +114,7 @@ void Server::checkCGI(void)
 	}
 }
 
-void Request::executeCGI(std::string fileName, char *executableCGI) {
+void Request::executeCGI(const std::string& fileName, char *executableCGI) {
 	initializeEnvpCGI();
 	_cgiEnv["SCRIPT_NAME"] = fileName;
 	_cgiEnv["URL"] = fileName;

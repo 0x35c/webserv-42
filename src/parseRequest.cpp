@@ -3,7 +3,19 @@
 #include <algorithm>
 #include <string>
 
-void trimString(std::string& string, const char* charset);
+/**
+* This function will return a specific part of str
+*
+* @param sep The delimiter character
+* @param str The reference string containing elements split with sep char
+* @param pos The element index you want to get
+* @return token The split element corresponding to the index
+*
+* Exemple: 
+* getToken("This is a string", ' ', 2);
+* will return "is", as it is the 2nd part of the string 
+* with the delimiter ' ' (space)
+*/
 static std::string getToken(const std::string& str, char sep, int pos){
 	std::string token;
 	int cur_pos;
@@ -22,6 +34,17 @@ static std::string getToken(const std::string& str, char sep, int pos){
 	return (token);
 }
 
+/**
+* This function will find the extension of the file
+*
+* @param fileName The file name
+* @return extension The extension according to the file name
+* 					default return is "text/html"
+*
+* Exemple: 
+* getToken("img.jpeg");
+* will return "jpeg", as it is the type of the file 
+*/
 static std::string getExtension(const std::string& fileName) {
 	std::string extension;
 	size_t dot = fileName.find(".");
@@ -34,7 +57,21 @@ static std::string getExtension(const std::string& fileName) {
 	return (extension);
 }
 
-void Request::processLine(std::string line, int lineToken) {
+/**
+* This function will get the specific parts of the attributes
+* in the HTTP header
+*
+* It will add the specific value to a std::map<int, std::string> named
+* _requestHeader at the right index, member attribute of the Request class
+*
+* @param line The line from the HTTP header, with the value of the attribute
+* @param lineToken The token corresponding to the attribute of the current line
+*
+* Exemple: 
+* getToken("Content-Type: text/html", CONTENT_TYPE);
+* will add "text/html" to _requestHeader[CONTENT_TYPE]
+*/
+void Request::processLine(const std::string& line, int lineToken) {
 	std::string str = getToken(line, ' ', 2);
 	int pos = str.find('\r');
 	std::string root = _location->root;
@@ -78,6 +115,14 @@ void Request::processLine(std::string line, int lineToken) {
 		_requestHeader.insert(strPair(lineToken, str));
 }
 
+/**
+* This function will find the location block depending on
+* the location path in the HTTP header
+*
+* @param path The path of the requested file
+* @param locations All the location blocks stored in the current server block (conf file)
+* @return t_location* The address of the right location block
+*/
 static t_location* getLocation(const std::string& path, std::vector<t_location>& locations) {
 	for (std::vector<t_location>::iterator it = locations.begin(); it != locations.end(); ++it) {
 		if (path == it->locationPath)
@@ -86,7 +131,14 @@ static t_location* getLocation(const std::string& path, std::vector<t_location>&
 	return (&(*(locations.begin())));
 }
 
-int Request::getLineToken(std::string line) {
+/**
+* This function will return the token regarding to the attribute
+* contained in the HTTP header
+*
+* @param line The line from the HTTP header, with the value of the attribute
+* @return token The corresponding token
+*/
+int Request::getLineToken(const std::string& line) {
 	if (line.find("POST") != std::string::npos || line.find("GET") != std::string::npos || line.find("DELETE") != std::string::npos) {
 		std::string path = getToken(line, ' ', 2);
 		if (path[0] == '/')
@@ -124,7 +176,19 @@ int Request::getLineToken(std::string line) {
 		return (-2);
 }
 
-static void processBody(std::string& boundary, std::string& line, strMap& requestHeader, std::string& query) {
+/**
+* This function will process the body of the HTTP request
+*
+* It will separate the body with the boundaries to keep
+* the whole content of the file but it will also get the CONTENT_TYPE
+* contained in the header of the specific boundary
+*
+* @param boundary The boundary from the HTTP header, delimiter of the content
+* @param line The whole body after the HTTP header 
+* @param requestHeader The map containing the header attributes values
+* @param query The query string (member of Request) used for CGI
+*/
+static void processBody(std::string& boundary, const std::string& line, strMap& requestHeader, std::string& query) {
 	int i = 1;
 	std::string str = getToken(line, '\n', i);
 	trimString(str, "-\r");

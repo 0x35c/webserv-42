@@ -34,13 +34,13 @@ void Parsing::methodAttribute(const std::vector<std::string> & lineSplit)
 
 void Parsing::returnAttribute(const std::vector<std::string> & lineSplit)
 {
+	if (lineSplit.size() != 3)
+		throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
 	_location.redirectionCode = strtol(lineSplit[1].c_str(), NULL, 10);
 	if (errno != 0)
 		throw(ParsingError(strerror(errno)));
 	else if (!isDigit(lineSplit[1]))
 		throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VALUE));
-	else if (lineSplit.size() != 3)
-		throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
 	_location.redirectionPath = lineSplit[2];
 	_location.lines[REDIRECTION] = _nbLine;
 	_location.isDefined[REDIRECTION] = true;
@@ -48,6 +48,8 @@ void Parsing::returnAttribute(const std::vector<std::string> & lineSplit)
 
 void Parsing::rootAttribute(const std::vector<std::string> & lineSplit)
 {
+	if (lineSplit.size() != 2)
+		throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
 	std::string tmp;
 	if (lineSplit[1][lineSplit[1].length() - 1] != '/')
 		tmp = lineSplit[1] + "/";
@@ -60,6 +62,8 @@ void Parsing::rootAttribute(const std::vector<std::string> & lineSplit)
 
 void Parsing::directoryListingAttribute(const std::vector<std::string> & lineSplit)
 {
+	if (lineSplit.size() != 2)
+		throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
 	if (lineSplit[1] == "ON")
 		_location.directoryListing = true;
 	else if (lineSplit[1] == "OFF")
@@ -70,12 +74,16 @@ void Parsing::directoryListingAttribute(const std::vector<std::string> & lineSpl
 
 void Parsing::indexAttribute(const std::vector<std::string> & lineSplit)
 {
+	if (lineSplit.size() != 2)
+		throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
 	_location.index = lineSplit[1];
 	_location.lines[INDEX] = _nbLine;
 	_location.isDefined[INDEX] = true;
 }
 void Parsing::acceptUploadedFileAttribute(const std::vector<std::string> & lineSplit)
 {
+	if (lineSplit.size() != 2)
+		throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
 	if (lineSplit[1] == "ON")
 		_location.acceptUploadedFile = true;
 	else if (lineSplit[1] == "OFF")
@@ -86,6 +94,8 @@ void Parsing::acceptUploadedFileAttribute(const std::vector<std::string> & lineS
 
 void Parsing::saveUploadedFileAttribute(const std::vector<std::string> & lineSplit)
 {
+	if (lineSplit.size() != 2)
+		throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
 	std::string tmp;
 	if (lineSplit[1][lineSplit[1].length() - 1] != '/')
 		tmp = lineSplit[1] + "/";
@@ -100,7 +110,7 @@ void Parsing::saveUploadedFileAttribute(const std::vector<std::string> & lineSpl
 
 void Parsing::listenAttribute(const std::vector<std::string> & lineSplit)
 {
-	if (lineSplit.size() < 3)
+	if (lineSplit.size() != 3)
 		throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
 	std::vector<std::string> portSplit = splitString(lineSplit[2], '.');
 	if (portSplit.size() != 4 || countChar(lineSplit[2], '.') != 3)
@@ -120,11 +130,15 @@ void Parsing::listenAttribute(const std::vector<std::string> & lineSplit)
 
 void Parsing::serverNameAttribute(const std::vector<std::string> & lineSplit)
 {
+	if (lineSplit.size() != 2)
+		throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
 	_server.server_name = lineSplit[1];
 }
 
 void Parsing::errpageAttribute(const std::vector<std::string> & lineSplit)
 {
+	if (lineSplit.size() != 2)
+		throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
 	if (!isValidPath(lineSplit[1]))
 		throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VALUE));
 	_server.errpage = lineSplit[1];
@@ -132,6 +146,8 @@ void Parsing::errpageAttribute(const std::vector<std::string> & lineSplit)
 
 void Parsing::maxFilesizeUploadAttribute(const std::vector<std::string> & lineSplit)
 {
+	if (lineSplit.size() != 2)
+		throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
 	_server.maxFileSizeUpload = strtol(lineSplit[1].c_str(), NULL, 10);
 	if (errno != 0)
 		throw(ParsingError(strerror(errno)));
@@ -142,4 +158,6 @@ void Parsing::maxFilesizeUploadAttribute(const std::vector<std::string> & lineSp
 void Parsing::locationAttribute(const std::vector<std::string> & lineSplit)
 {
 	(void)lineSplit;
+	if (lineSplit.size() != 3)
+		throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
 }

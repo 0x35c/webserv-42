@@ -38,7 +38,6 @@ bool Request::requestCGI()
 	for (size_t i = 0; i < _location->executableCGI.size(); ++i)
 	{
 		if (fileName.length() > _location->extensionCGI[i].length() && fileName.substr(fileName.length() - _location->extensionCGI[i].length()) == _location->extensionCGI[i]) {
-			_cgi.inCGI = true;
 			if (setStatusCode() == 400)
 			{
 				sendErrorResponse();
@@ -74,13 +73,13 @@ void Server::checkCGI(void)
 		{
 			stopCGI = true;
 			char buffer[BUFFER_SIZE] = {0};
-			int fileSize = recv(it->second.getCGI().fds[1][0], buffer, BUFFER_SIZE, 0);
+			int fileSize = read(it->second.getCGI().fds[1][0], buffer, BUFFER_SIZE);
 			if (fileSize < 0)
 				throw (ServerException());
 			std::string responseCGI = buffer;
 			if (responseCGI.empty())
 				responseCGI = EXECUTION_CGI_FAILED_HTML;
-			if (responseCGI.find("\n\n") == std::string::npos || responseCGI.find("Content-type: text/html") == std::string::npos)
+			if (responseCGI.find("\n\n") == std::string::npos || responseCGI.find("Content-Type: text/html") == std::string::npos)
 				responseCGI = BAD_CGI_HEADER_HTML;
 			std::string tmpHeader = responseCGI.substr(0, responseCGI.find("\n\n") + 1);
 			std::string tmpBody = responseCGI.substr(responseCGI.find("\n\n") + 2, std::string::npos);
@@ -139,6 +138,7 @@ void Request::executeCGI(std::string fileName, char *executableCGI) {
 			throw (Request::RequestException());
 		if (pid > 0)
 		{
+			_cgi.inCGI = true;
 			_cgi.pid = pid;
 			_cgi.begin_time = std::time(NULL);
 		}

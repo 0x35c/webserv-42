@@ -16,9 +16,6 @@ static std::string handleDirectoryCode(strMap& _requestHeader) {
 int Request::setStatusCode(void) {
 	std::ifstream file;
 	
-	std::cout << "getmethod: " << _location->methodsAllowed[GET] << "\n";
-	std::cout << "index: " + _location->index << "\n";
-	std::cout << "head" + _requestHeader[HEAD] + "\n";
 	file.open(_requestHeader[HEAD].c_str());
 	if (_method == "GET" && _location->methodsAllowed[GET] == false) {
 		_statusCode = "405 Method Not Allowed";

@@ -109,7 +109,7 @@ void Parsing::listenAttribute(const std::vector<std::string> & lineSplit)
 	std::vector<std::string> portSplit = splitString(lineSplit[2], '.');
 	if (portSplit.size() != 4 || countChar(lineSplit[2], '.') != 3)
 		throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VALUE));
-	for (size_t j = 0; j < 4; j++)
+	for (size_t j = 0; j < 4; ++j)
 	{
 		if (!isDigit(portSplit[j]))
 			throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VALUE));
@@ -124,7 +124,6 @@ void Parsing::listenAttribute(const std::vector<std::string> & lineSplit)
 
 void Parsing::serverNameAttribute(const std::vector<std::string> & lineSplit)
 {
-	(void)_nbLine;
 	_server.server_name = lineSplit[1];
 }
 
@@ -146,9 +145,5 @@ void Parsing::maxFilesizeUploadAttribute(const std::vector<std::string> & lineSp
 
 void Parsing::locationAttribute(const std::vector<std::string> & lineSplit)
 {
-	initializeLocation();
-	if (!isValidPath(lineSplit[1]))
-		throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VALUE));
-	_location.locationPath = lineSplit[1];
-	_server.locations.push_back(_location);
+	(void)lineSplit;
 }

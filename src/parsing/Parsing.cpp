@@ -3,7 +3,6 @@
 Parsing::Parsing()
 {
 	_nbLine = 0;
-	_configFileFine = false;
 	_inServerBlock = false;
 	_inLocationBlock = false;
 	_inMethodBlock = false;

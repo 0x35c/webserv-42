@@ -121,7 +121,6 @@ class Parsing
 		bool _argumentUsedLocation[8];
 		bool _inMethodBlock;
 		bool _argumentUsedMethod[3];
-		bool _configFileFine;
 		std::string _line;
 		std::vector<t_server> _servers;
 		t_server _server;

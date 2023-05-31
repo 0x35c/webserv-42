@@ -20,9 +20,9 @@ void debug(t_location & location)
 
 void	Parsing::checkDifferentServer()
 {
-	for (size_t i = 0; i < _servers.size(); i++)
+	for (size_t i = 0; i < _servers.size(); ++i)
 	{
-		for (size_t j = i + 1; j < _servers.size(); j++)
+		for (size_t j = i + 1; j < _servers.size(); ++j)
 		{
 			if (_servers[i].port == _servers[j].port
 				&& _servers[i].host == _servers[j].host)
@@ -34,19 +34,23 @@ void	Parsing::checkDifferentServer()
 void	Parsing::noBlock()
 {
 	if (_line.length() > 0 && _line != "server {")
-		throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
+		throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VARIABLE));
 	_inServerBlock = true;
 	initializeServer();
 }
 
 void Parsing::serverBlock()
 {
-	if (strncmp(_line.c_str(), "location ", 9) == 0)
+	std::vector<std::string> lineSplit = splitString(_line, ' ');
+	if (lineSplit.size() > 0 && lineSplit[0] == "location")
 	{
-		std::vector<std::string> lineSplitted = splitString(_line, ' ');
-		if (lineSplitted.size() != 3)
+		if (lineSplit.size() != 3)
 			throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
-		_location.locationPath = lineSplitted[1];
+		if (lineSplit[2] != "{")
+			throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VARIABLE));
+		if (!isValidPath(lineSplit[1]))
+			throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VALUE));
+		_location.locationPath = lineSplit[1];
 		initializeLocation();
 		_inLocationBlock = true;
 	}
@@ -62,11 +66,17 @@ void Parsing::serverBlock()
 
 void Parsing::locationBlock()
 {
-	if (strncmp(_line.c_str(), "methods ", 8) == 0)
+	std::vector<std::string> lineSplit = splitString(_line, ' ');
+	if (lineSplit.size() > 0 && lineSplit[0] == "methods")
+	{
 		_inMethodBlock = true;
+		if (lineSplit.size() != 2)
+			throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
+		if (lineSplit[1] != "{")
+			throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VARIABLE));
+	}
 	else if (_line == "}")
 	{
-		//debug(*_location);
 		testLocationValue();
 		_server.locations.push_back(_location);
 		_inLocationBlock = false;
@@ -106,7 +116,6 @@ const std::vector<t_server>& Parsing::readConfFile(std::ifstream & confFile)
 			methodBlock();
 	}
 	confFile.close();
-	_configFileFine = true;
 	checkDifferentServer();
 	return (_servers);
 }

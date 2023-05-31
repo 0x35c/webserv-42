@@ -29,38 +29,38 @@ void Parsing::resetBlockArg(int block)
 {
 	if (block == SERVER_BLOCK)
 	{
-		for (int i = 0; i < 5; i++)
+		for (int i = 0; i < 5; ++i)
 			_argumentUsedServer[i] = false;
 	}
 	else if (block == LOCATION_BLOCK)
 	{
-		for (int i = 0; i < 8; i++)
+		for (int i = 0; i < 8; ++i)
 			_argumentUsedLocation[i] = false;
 	}
 	else if (block == METHOD_BLOCK)
 	{
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < 3; ++i)
 			_argumentUsedMethod[i] = false;
 	}
 }
 
 void	Parsing::parseLineMethodBlock()
 {
-	std::vector<std::string> lineSplitted = splitString(_line, ' ');
-	if (lineSplitted.size() != 2)
+	std::vector<std::string> lineSplit = splitString(_line, ' ');
+	if (lineSplit.size() != 2)
 		throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
 	
 	std::string arguments[3] = {"GET", "POST", "DELETE"};
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 3; ++i)
 	{
-		if (arguments[i] == lineSplitted[0])
+		if (arguments[i] == lineSplit[0])
 		{
 			if (_argumentUsedMethod[i])
 				throw(ParsingError("line " + intToString(_nbLine) + REDECLARATION));
 			_argumentUsedMethod[i] = true;
-			if (lineSplitted[1] == "ON")
+			if (lineSplit[1] == "ON")
 				_location.methodsAllowed[i] = true;
-			else if (lineSplitted[1] == "OFF")
+			else if (lineSplit[1] == "OFF")
 				_location.methodsAllowed[i] = false;
 			else
 				throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VALUE));
@@ -72,21 +72,21 @@ void	Parsing::parseLineMethodBlock()
 
 void	Parsing::parseLineLocationBlock()
 {
-	std::vector<std::string> lineSplitted = splitString(_line, ' ');
+	std::vector<std::string> lineSplit = splitString(_line, ' ');
 	
-	static std::map<std::string, function> functionMap = initFunctionMap(LOCATION_BLOCK);
+	const std::map<std::string, function> functionMap = initFunctionMap(LOCATION_BLOCK);
 	int i = 0;
-	std::map<std::string, function>::iterator it;
+	std::map<std::string, function>::const_iterator it;
 	
-	for (it = functionMap.begin(); it != functionMap.end(); it++)
+	for (it = functionMap.begin(); it != functionMap.end(); ++it)
 	{
-		if (it->first == lineSplitted[0])
+		if (it->first == lineSplit[0])
 		{
 			if (_argumentUsedLocation[i])
 				throw(ParsingError("line " + intToString(_nbLine) + REDECLARATION));
-			if (lineSplitted[0] != "CGI")
+			if (lineSplit[0] != "CGI")
 				_argumentUsedLocation[i] = true;
-			(this->*it->second)(lineSplitted);
+			(this->*it->second)(lineSplit);
 			return ;
 		}
 		i++;
@@ -96,22 +96,22 @@ void	Parsing::parseLineLocationBlock()
 
 void	Parsing::parseLineServerBlock()
 {
-	std::vector<std::string> lineSplitted = splitString(_line, ' ');
+	std::vector<std::string> lineSplit = splitString(_line, ' ');
 	
-	if (lineSplitted.size() < 2)
+	if (lineSplit.size() < 2)
 		throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
 	
-	static std::map<std::string, function>  functionMap = initFunctionMap(SERVER_BLOCK);
+	const std::map<std::string, function>  functionMap = initFunctionMap(SERVER_BLOCK);
 	int i = 0;
-	std::map<std::string, function>::iterator it;
-	for (it = functionMap.begin(); it != functionMap.end(); it++)
+	std::map<std::string, function>::const_iterator it;
+	for (it = functionMap.begin(); it != functionMap.end(); ++it)
 	{
-		if (it->first == lineSplitted[0])
+		if (it->first == lineSplit[0])
 		{
 			if (_argumentUsedServer[i])
 				throw(ParsingError("line " + intToString(_nbLine) + REDECLARATION));
 			_argumentUsedServer[i] = true;
-			(this->*it->second)(lineSplitted);
+			(this->*it->second)(lineSplit);
 			return ;
 		}
 		i++;

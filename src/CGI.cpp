@@ -22,11 +22,11 @@ static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv) {
 	int i = 0;
 	std::string *tmp;
 	std::map<std::string, std::string>::iterator it;
-	for (it = _cgiEnv.begin(); it != _cgiEnv.end(); it++) {
+	for (it = _cgiEnv.begin(); it != _cgiEnv.end(); ++it) {
 		tmp = new std::string;
 		*tmp = it->first + "=" + it->second + "\0";
 		arrayEnvpVariable[i] = (char *)tmp->c_str();
-		i++;
+		++i;
 	}
 	arrayEnvpVariable[i] = NULL;
 	return (arrayEnvpVariable);
@@ -35,7 +35,7 @@ static char **getEnvpInArray(std::map<std::string, std::string> _cgiEnv) {
 bool Request::requestCGI()
 {
 	std::string fileName = _requestHeader[HEAD];
-	for (size_t i = 0; i < _location->executableCGI.size(); i++)
+	for (size_t i = 0; i < _location->executableCGI.size(); ++i)
 	{
 		if (fileName.length() > _location->extensionCGI[i].length() && fileName.substr(fileName.length() - _location->extensionCGI[i].length()) == _location->extensionCGI[i]) {
 			_cgi.inCGI = true;
@@ -53,7 +53,7 @@ bool Request::requestCGI()
 
 void Server::checkCGI(void)
 {
-	for (requestMap::iterator it = _requests.begin(); it != _requests.end(); it++)
+	for (requestMap::iterator it = _requests.begin(); it != _requests.end(); ++it)
 	{
 		if (it->second.getCGI().inCGI == false)
 			continue ;
@@ -126,7 +126,7 @@ void Request::executeCGI(std::string fileName, char *executableCGI) {
 						(char *)(_query.c_str()),NULL};
 		char **EnvpVariables = getEnvpInArray(_cgiEnv);
 		execve(executableCGI, args, EnvpVariables);
-		for (size_t i = 0; EnvpVariables[i]; i++)
+		for (size_t i = 0; EnvpVariables[i]; ++i)
 			delete EnvpVariables[i];
 		delete [] EnvpVariables;
 		exit(EXIT_FAILURE);

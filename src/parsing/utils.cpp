@@ -38,7 +38,7 @@ void trimString(std::string& string, const char* charset)
 
 bool isDigit(const std::string string)
 {
-	for (int i = 0; string[i]; i++)
+	for (int i = 0; string[i]; ++i)
 	{
 		if (string[i] < '0' || string[i] > '9')
 			return (false);
@@ -68,7 +68,7 @@ bool isValidPathDir(const std::string string)
 size_t countChar(const std::string string, const char delimiter)
 {
 	size_t nbChar = 0;
-	for (size_t i = 0; string[i]; i++)
+	for (size_t i = 0; string[i]; ++i)
 	{
 		if (string[i] == delimiter)
 			nbChar++;

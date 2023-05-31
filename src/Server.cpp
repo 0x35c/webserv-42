@@ -83,7 +83,7 @@ void Server::start(void)
 		checkCGI();
 		if (rv == 0)
 			continue ;
-		for (socketMap::iterator it = _sockets.begin(); it != _sockets.end(); it++)
+		for (socketMap::iterator it = _sockets.begin(); it != _sockets.end(); ++it)
 			if (FD_ISSET(it->first, &readSet))
 				_acceptConnection(it->first, it->second);
 
@@ -97,7 +97,7 @@ void Server::start(void)
 					continue ;
 				}
 			}
-			it++;
+			++it;
 		}
 	}
 }

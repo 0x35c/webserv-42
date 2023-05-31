@@ -9,7 +9,7 @@ static std::string getToken(const std::string& str, char sep, int pos){
 	int cur_pos;
 
 	cur_pos = 1;
-	for (uint64_t i = 0; i < str.size(); i++) {
+	for (uint64_t i = 0; i < str.size(); ++i) {
 		if (str[i] == sep)	{
 			if (cur_pos == pos)
 				break;
@@ -79,7 +79,7 @@ void Request::processLine(std::string line, int lineToken) {
 }
 
 static t_location* getLocation(const std::string& path, std::vector<t_location>& locations) {
-	for (std::vector<t_location>::iterator it = locations.begin(); it != locations.end(); it++) {
+	for (std::vector<t_location>::iterator it = locations.begin(); it != locations.end(); ++it) {
 		if (path == it->locationPath)
 			return (&(*it));
 	}
@@ -128,7 +128,7 @@ static void processBody(std::string& boundary, std::string& line, strMap& reques
 	std::string str = getToken(line, '\n', i);
 	trimString(str, "-\r");
 	if (!boundary.empty() && str == boundary) {
-		i++;
+		++i;
 		while (i < 4) {
 			str = getToken(line, '\n', i);
 			if (i == 2) {
@@ -139,7 +139,7 @@ static void processBody(std::string& boundary, std::string& line, strMap& reques
 				std::string tmp = getToken(str, ' ', 2);
 				requestHeader[CONTENT_TYPE] = tmp;
 			}
-			i++;
+			++i;
 		}
 		std::string tmp = line.substr(line.find("\r\n\r\n"), line.length());
 		tmp.erase(0, 4);
@@ -165,7 +165,7 @@ void Request::parseHeader(const std::string& buffer) {
 		while (buffer[i] && buffer[i] != '\n')
 		{
 			line += buffer[i];
-			i++;
+			++i;
 		}
 		if (line == "\r")
 		{
@@ -174,7 +174,7 @@ void Request::parseHeader(const std::string& buffer) {
 		lineToken = getLineToken(line);
 		processLine(line, lineToken);
 		line.clear();
-		i++;
+		++i;
 	}
 	line.clear();
 	/* if (_method == "POST" && std::atoll(_requestHeader[CONTENT_LENGTH].c_str()) > _serverConfig.maxFileSizeUpload) { */

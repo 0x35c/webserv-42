@@ -259,4 +259,5 @@ void Request::respondToRequest(void) {
 		respondToDeleteRequest();
 	_requestHeader.clear();
 	_boundary.clear();
+	_statusCode.clear();
 }

@@ -77,13 +77,21 @@ void Server::checkCGI(void)
 			std::string responseCGI = buffer;
 			if (responseCGI.empty())
 			{
+				std::ifstream errorFile("includes/defaultPages/502");
+				std::ostringstream errorStream;
 				statusCode = "502 Bad Gateway";
-				responseCGI = EXECUTION_CGI_FAILED_HTML;
+				errorStream << "Content-Type: text/html\n\n";
+				errorStream << errorFile.rdbuf();
+				responseCGI = errorStream.str();
 			}
 			else if (responseCGI.find("\n\n") == std::string::npos || responseCGI.find("Content-Type: text/html") == std::string::npos)
 			{
+				std::ifstream errorFile("includes/defaultPages/502");
+				std::ostringstream errorStream;
 				statusCode = "502 Bad Gateway";
-				responseCGI = BAD_CGI_HEADER_HTML;
+				errorStream << "Content-Type: text/html\n\n";
+				errorStream << errorFile.rdbuf();
+				responseCGI = errorStream.str();
 			}
 			std::string tmpHeader = responseCGI.substr(0, responseCGI.find("\n\n") + 1);
 			std::string tmpBody = responseCGI.substr(responseCGI.find("\n\n") + 2, std::string::npos);

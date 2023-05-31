@@ -6,6 +6,8 @@ Server::Server(void)
 {
 	FD_ZERO(&_readSet);
 	FD_ZERO(&_writeSet);
+	_timeout.tv_sec = 0;
+	_timeout.tv_usec = 10000;
 }
 
 void Server::addAddress(const t_server& serverConfig)
@@ -17,17 +19,17 @@ void Server::addAddress(const t_server& serverConfig)
 
 	int fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0)
-		throw ServerException();
+		throw (ServerException());
 
 	int option = 1;
 	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(int)) < 0)
-		throw ServerException();
+		throw (ServerException());
 
 	if (bind(fd, (sockaddr*)&socketAddress, _addressLen) < 0)
-		throw ServerException();
+		throw (ServerException());
 
 	if (listen(fd, LISTEN_BACKLOG) < 0)
-		throw ServerException();
+		throw (ServerException());
 
 	FD_SET(fd, &_readSet);
 	FD_SET(fd, &_writeSet);
@@ -72,32 +74,35 @@ void Server::start(void)
 		std::cout << "Listening on " << inet_ntoa(it->second.socketAddress.sin_addr) << ":" << ntohs(it->second.socketAddress.sin_port) << std::endl;
 	while (true)
 	{
-		readSet = _readSet;
-		writeSet = _writeSet;
-		struct timeval timeout;
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 10000;
-		int rv = select(FD_SETSIZE + 1, &readSet, &writeSet, NULL, &timeout);
-		if (rv < 0)
-			throw ServerException();
-		checkCGI();
-		if (rv == 0)
-			continue ;
-		for (socketMap::iterator it = _sockets.begin(); it != _sockets.end(); ++it)
-			if (FD_ISSET(it->first, &readSet))
-				_acceptConnection(it->first, it->second);
-
-		for (requestMap::iterator it = _requests.begin(); it != _requests.end(); )
+		try
 		{
-			if (FD_ISSET(it->first, &readSet) && it->second.getCGI().inCGI == false)
+			readSet = _readSet;
+			writeSet = _writeSet;
+			int rv = select(FD_SETSIZE + 1, &readSet, &writeSet, NULL, &_timeout);
+			if (rv < 0)
+				throw (Request::RequestException());
+			checkCGI();
+			if (rv == 0)
+				continue ;
+			for (socketMap::iterator it = _sockets.begin(); it != _sockets.end(); ++it)
+				if (FD_ISSET(it->first, &readSet))
+					_acceptConnection(it->first, it->second);
+
+			for (requestMap::iterator it = _requests.begin(); it != _requests.end(); )
 			{
-				if (_processRequest(it->first, it->second, &writeSet))
+				if (FD_ISSET(it->first, &readSet) && it->second.getCGI().inCGI == false)
 				{
-					_requests.erase(it++);
-					continue ;
+					if (_processRequest(it->first, it->second, &writeSet))
+					{
+						_requests.erase(it++);
+						continue ;
+					}
 				}
+				++it;
 			}
-			++it;
+		}
+		catch (const Request::RequestException & e)
+		{
 		}
 	}
 }
@@ -108,7 +113,7 @@ void Server::_acceptConnection(int socketFd, const t_server& serverConfig)
 	if (fd < 0)
 	{
 		if (errno != EAGAIN && errno != EWOULDBLOCK)
-			throw ServerException();
+			throw (Request::RequestException());
 		return ;
 	}
 	FD_SET(fd, &_readSet);

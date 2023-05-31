@@ -50,7 +50,12 @@ void Parsing::serverBlock()
 			throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VARIABLE));
 		if (!isValidPath(lineSplit[1]))
 			throw(ParsingError("line " + intToString(_nbLine) + INCORRECT_VALUE));
-		_location.locationPath = lineSplit[1];
+		std::string tmp;
+		if (lineSplit[1][lineSplit[1].length() - 1] != '/')
+			tmp = lineSplit[1] + "/";
+		else
+			tmp = lineSplit[1];
+		_location.locationPath = tmp;
 		initializeLocation();
 		_inLocationBlock = true;
 	}

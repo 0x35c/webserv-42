@@ -7,22 +7,14 @@
 //LOCATION BLOCK ATTRIBUTE
 void Parsing::testLocationValue()
 {
-	if (!isValidPathDir(_location.root))
+	if (_location.isDefined[ROOT] && !isValidPathDir(_location.root))
 		throw(ParsingError("line " + intToString(_location.lines[ROOT]) + INCORRECT_VALUE));
-	bool resetRoot = false;
-	if (_location.root == _location.locationPath)
-	{
-		_location.root = "";
-		resetRoot = true;
-	}
-	if (!isValidPath(_location.root +_location.redirectionPath))
+	if (_location.isDefined[REDIRECTION] && !isValidPath(_location.root +_location.redirectionPath))
 		throw(ParsingError("line " + intToString(_location.lines[REDIRECTION]) + INCORRECT_VALUE));
-	if (!isValidPath(_location.root +_location.index))
+	if (_location.isDefined[INDEX] && !isValidPath(_location.root +_location.index))
 		throw(ParsingError("line " + intToString(_location.lines[INDEX]) + INCORRECT_VALUE));
-	if (!isValidPathDir(_location.root +_location.uploadedFilePath))
+	if (_location.isDefined[UPLOAD] && !isValidPathDir(_location.root +_location.uploadedFilePath))
 		throw(ParsingError("line " + intToString(_location.lines[UPLOAD]) + INCORRECT_VALUE));
-	if (resetRoot)
-		_location.root = _location.locationPath;
 }
 
 void Parsing::CGIAttribute(const std::vector<std::string> & lineSplit)
@@ -51,6 +43,7 @@ void Parsing::returnAttribute(const std::vector<std::string> & lineSplit)
 		throw(ParsingError("line " + intToString(_nbLine) + WRONG_NB_ARG));
 	_location.redirectionPath = lineSplit[2];
 	_location.lines[REDIRECTION] = _nbLine;
+	_location.isDefined[REDIRECTION] = true;
 }
 
 void Parsing::rootAttribute(const std::vector<std::string> & lineSplit)
@@ -62,6 +55,7 @@ void Parsing::rootAttribute(const std::vector<std::string> & lineSplit)
 		tmp = lineSplit[1];
 	_location.root = tmp;
 	_location.lines[ROOT] = _nbLine;
+	_location.isDefined[ROOT] = true;
 }
 
 void Parsing::directoryListingAttribute(const std::vector<std::string> & lineSplit)
@@ -78,6 +72,7 @@ void Parsing::indexAttribute(const std::vector<std::string> & lineSplit)
 {
 	_location.index = lineSplit[1];
 	_location.lines[INDEX] = _nbLine;
+	_location.isDefined[INDEX] = true;
 }
 void Parsing::acceptUploadedFileAttribute(const std::vector<std::string> & lineSplit)
 {
@@ -98,6 +93,7 @@ void Parsing::saveUploadedFileAttribute(const std::vector<std::string> & lineSpl
 		tmp = lineSplit[1];
 	_location.uploadedFilePath = tmp;
 	_location.lines[UPLOAD] = _nbLine;
+	_location.isDefined[UPLOAD] = true;
 }
 
 //SERVER BLOCK ATTRIBUTE

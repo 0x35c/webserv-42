@@ -45,6 +45,7 @@ class Server {
 		fd_set 		_readSet;
 		fd_set 		_writeSet;
 		t_server	_config;
+		struct timeval _timeout;
 
 		Server(Server const &other);
 		Server &operator=(Server const &other);

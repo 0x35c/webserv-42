@@ -13,6 +13,8 @@ void	Parsing::initializeLocation()
 	_location.uploadedFilePath = "includes/uploads/";
 	for (int i = 0; i < 4; ++i)
 		_location.lines[i] = 0;
+	for (int i = 0; i < 4; ++i)
+		_location.isDefined[i] = false;
 }
 
 void	Parsing::initializeServer()

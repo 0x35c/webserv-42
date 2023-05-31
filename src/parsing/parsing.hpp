@@ -35,6 +35,7 @@ typedef struct s_location {
 	bool		acceptUploadedFile;
 	std::string	uploadedFilePath;
 	int			lines[4];
+	bool		isDefined[4];
 	std::vector<std::string> executableCGI;
 	std::vector<std::string> extensionCGI;
 

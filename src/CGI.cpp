@@ -62,7 +62,7 @@ void Server::checkCGI(void)
 		{
 			stopCGI = true;
 			if (kill(it->second.getCGI().pid, SIGKILL) < 0)
-				throw (ServerException());
+				throw (Request::RequestException());
 			std::string InfiniteLoopHTML = INFINITE_LOOP_HTML;
 			ss << "HTTP/1.1 508 Loop Detected\r\n";
 			ss << "Content-type: text/html\r\n";
@@ -75,7 +75,7 @@ void Server::checkCGI(void)
 			char buffer[BUFFER_SIZE] = {0};
 			int fileSize = read(it->second.getCGI().fds[1][0], buffer, BUFFER_SIZE);
 			if (fileSize < 0)
-				throw (ServerException());
+				throw (Request::RequestException());
 			std::string responseCGI = buffer;
 			if (responseCGI.empty())
 				responseCGI = EXECUTION_CGI_FAILED_HTML;
@@ -92,10 +92,10 @@ void Server::checkCGI(void)
 		if (stopCGI)
 		{
 			if (close(it->second.getCGI().fds[1][0]) == -1)
-				throw (ServerException());
+				throw (Request::RequestException());
 			it->second.getCGI().inCGI = false;
 			if (send(it->second.getClientfd(), ss.str().c_str(), ss.str().size(), 0) < 0)
-				throw (ServerException());
+				throw (Request::RequestException());
 			ss.str("");
 			ss.clear();
 		}

@@ -89,9 +89,14 @@ static t_location* getLocation(const std::string& path, std::vector<t_location>&
 int Request::getLineToken(std::string line) {
 	if (line.find("POST") != std::string::npos || line.find("GET") != std::string::npos || line.find("DELETE") != std::string::npos) {
 		std::string path = getToken(line, ' ', 2);
-		size_t pos = path.rfind("/", path.length() - 2);
-		if (pos != std::string::npos && closedir(opendir(_requestHeader[HEAD].c_str())) == -1) {
-			path = path.substr(0, pos);
+		size_t pos = path.rfind("/", path.length() - 1);
+		if (pos != std::string::npos) {
+			path = path.substr(0, pos + 1);
+			if (path[0] == '/')
+				path.erase(0, 1);
+		}
+		else if (closedir(opendir(_requestHeader[HEAD].c_str())) == -1) {
+			path = _requestHeader[HEAD] + "/";
 			if (path[0] == '/')
 				path.erase(0, 1);
 		}
@@ -177,11 +182,6 @@ void Request::parseHeader(const std::string& buffer) {
 		++i;
 	}
 	line.clear();
-	/* if (_method == "POST" && std::atoll(_requestHeader[CONTENT_LENGTH].c_str()) > _serverConfig.maxFileSizeUpload) { */
-	/* 	_statusCode = "413 Content Too Large"; */
-	/* 	_requestHeader[HEAD] = "includes/defaultPages/413"; */
-	/* 	respondToRequest(); */
-	/* } */
 	size_t pos = buffer.find("\r\n\r\n");
 	line = buffer.substr(pos + 4, std::string::npos);
 	_requestHeader[BODY] = line;

@@ -1,4 +1,5 @@
 #include <algorithm>
+#include "Request.hpp"
 #include "Server.hpp"
 
 Server::Server(void)
@@ -74,35 +75,29 @@ void Server::start(void)
 		std::cout << "Listening on " << inet_ntoa(it->second.socketAddress.sin_addr) << ":" << ntohs(it->second.socketAddress.sin_port) << std::endl;
 	while (true)
 	{
-		try
-		{
-			readSet = _readSet;
-			writeSet = _writeSet;
-			int rv = select(FD_SETSIZE + 1, &readSet, &writeSet, NULL, &_timeout);
-			if (rv < 0)
-				throw (Request::RequestException());
-			checkCGI();
-			if (rv == 0)
-				continue ;
-			for (socketMap::iterator it = _sockets.begin(); it != _sockets.end(); ++it)
-				if (FD_ISSET(it->first, &readSet))
-					_acceptConnection(it->first, it->second);
+		readSet = _readSet;
+		writeSet = _writeSet;
+		int rv = select(FD_SETSIZE + 1, &readSet, &writeSet, NULL, &_timeout);
+		if (rv < 0)
+			throw (Request::RequestException(0));
+		checkCGI();
+		if (rv == 0)
+			continue ;
+		for (socketMap::iterator it = _sockets.begin(); it != _sockets.end(); ++it)
+			if (FD_ISSET(it->first, &readSet))
+				_acceptConnection(it->first, it->second);
 
-			for (requestMap::iterator it = _requests.begin(); it != _requests.end(); )
-			{
-				if (FD_ISSET(it->first, &readSet) && it->second.getCGI().inCGI == false)
-				{
-					if (_processRequest(it->first, it->second, &writeSet))
-					{
-						_requests.erase(it++);
-						continue ;
-					}
-				}
-				++it;
-			}
-		}
-		catch (const Request::RequestException & e)
+		for (requestMap::iterator it = _requests.begin(); it != _requests.end(); )
 		{
+			if (FD_ISSET(it->first, &readSet) && it->second.getCGI().inCGI == false)
+			{
+				if (_processRequest(it->first, it->second, &writeSet))
+				{
+					_requests.erase(it++);
+					continue ;
+				}
+			}
+			++it;
 		}
 	}
 }
@@ -113,7 +108,7 @@ void Server::_acceptConnection(int socketFd, const t_server& serverConfig)
 	if (fd < 0)
 	{
 		if (errno != EAGAIN && errno != EWOULDBLOCK)
-			throw (Request::RequestException());
+			throw (Request::RequestException(0));
 		return ;
 	}
 	FD_SET(fd, &_readSet);
@@ -123,19 +118,23 @@ void Server::_acceptConnection(int socketFd, const t_server& serverConfig)
 
 bool Server::_processRequest(int clientFd, Request &request, fd_set* writeSet)
 {
-	std::string header_buffer(BUFFER_SIZE, 0);
-	int rc = recv(clientFd, &header_buffer[0], BUFFER_SIZE, 0);
-	if (rc <= 0)
-	{
+	int rv;
+	try {
+		std::string header_buffer(BUFFER_SIZE, 0);
+		rv = recv(clientFd, &header_buffer[0], BUFFER_SIZE, 0);
+		if (rv <= 0)
+			throw (Request::RequestException(rv));
+		if (request.readRequest(header_buffer) && FD_ISSET(clientFd, writeSet))
+			request.respondToRequest();
+	}
+	catch (const Request::RequestException & e) {
 		close(clientFd);
 		FD_CLR(clientFd, &_readSet);
 		FD_CLR(clientFd, &_writeSet);
-		if (rc == -1)
+		if (e.rv() == -1)
 			std::cerr << "error: " << strerror(errno) << "\n";
 		return true;
 	}
-	if (request.readRequest(header_buffer) && FD_ISSET(clientFd, writeSet))
-		request.respondToRequest();
 	return false;
 }
 

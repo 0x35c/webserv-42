@@ -79,7 +79,11 @@ class Request {
 
 		class RequestException : public std::exception {
 			public:
+				RequestException(int rv);
 				char const *what(void) const throw();
+				int rv(void) const throw();
+			private:
+				const int _rv;
 		};
 
 	// Private member functions

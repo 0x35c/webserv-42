@@ -5,11 +5,11 @@
 #include <fcntl.h>
 
 Request::Request(void)
-	: _clientfd(-1), _method("NTM")
+	: _clientfd(-1), _method("")
 { _cgi.inCGI = false; }
 
 Request::Request(int clientfd, const t_server& serverConfig)
-	: _clientfd(clientfd), _method("NTM"), _serverConfig(serverConfig)
+	: _clientfd(clientfd), _method(""), _serverConfig(serverConfig)
 { _cgi.inCGI = false; }
 
 Request::Request(const Request& other)
@@ -46,7 +46,9 @@ void Request::sendErrorResponse(void) {
 	ss << "Content-type: text/html\r\n";
 	ss << "Content-Length: " << fileSize << "\r\n\r\n";
 	ss << file.rdbuf();
-	send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
+	int rv = send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
+	if (rv <= 0)
+		throw (RequestException(rv));
 }
 
 void Request::respondToGetRequest(void) {
@@ -70,7 +72,9 @@ void Request::respondToGetRequest(void) {
 		ss << "Content-Length: " << fileSize << "\r\n\r\n";
 		ss << file.rdbuf();
 
-		send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
+		int rv = send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
+		if (rv <= 0)
+			throw (RequestException(rv));
 		ss.str("");
 		ss.clear();
 		file.close();
@@ -92,8 +96,6 @@ void Request::respondToPostRequest(void) {
 	if (requestCGI())
 		return ;
 	std::ostringstream ss;
-	std::cout << "FILENAME: " << _requestHeader[HEAD] << std::endl;
-	std::cout << "Location: " << _location->uploadedFilePath << std::endl;
 
 	_requestHeader[LOCATION] = "/";
 	ss << "HTTP/1.1 " << _statusCode << "\r\n";
@@ -101,10 +103,12 @@ void Request::respondToPostRequest(void) {
 	if (_statusCode == "302 Redirect")
 		ss << "Location: " << _requestHeader[LOCATION] << "\r\n";
 	ss << "Content-length: 0" << "\r\n\r\n";
-	send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
+	int rv = send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
+	if (rv <= 0)
+		throw (RequestException(rv));
 
 	if (statusCode == 200) {
-		std::ofstream file((_location->uploadedFilePath + _requestHeader[HEAD]).c_str());
+		std::ofstream file((_location->root + _location->uploadedFilePath + _requestHeader[HEAD]).c_str());
 		file << _requestHeader[BODY];
 		file.close();
 	}
@@ -119,7 +123,9 @@ void Request::respondToDeleteRequest(void) {
 	ss << "HTTP/1.1 " << _statusCode << "\r\n";
 	ss << "Content-type: " << _requestHeader[ACCEPT] + "\r\n";
 	ss << "Content-Length: 0\r\n\r\n";
-	send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
+	int rv = send(_clientfd, ss.str().c_str(), ss.str().size(), 0);
+	if (rv <= 0)
+		throw (RequestException(rv));
 }
 
 const std::string Request::getMethod(std::string buffer) {
@@ -136,9 +142,9 @@ bool Request::readRequest(std::string const &rawRequest) {
 	static bool headerRead = false;
 	if (headerRead == false) {
 		_method = getMethod(rawRequest);
-		parseHeader(rawRequest);
-		if (_method == "POST" && _boundary.empty())
-		{
+		if (_method != "FORBIDDEN")
+			parseHeader(rawRequest);
+		if ((_method == "POST" && _boundary.empty()) || _method == "FORBIDDEN") {
 			headerRead = false;
 			return (true);
 		}
@@ -179,6 +185,12 @@ const std::string& Request::getStatusCode(void) const {
 	return (_statusCode);
 }
 
+Request::RequestException::RequestException(int rv): _rv(rv){}
+
 char const *Request::RequestException::what(void) const throw() {
 	return strerror(errno);
+}
+
+int Request::RequestException::rv(void) const throw() {
+	return (_rv);
 }

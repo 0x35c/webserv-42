@@ -59,7 +59,7 @@ void Server::checkCGI(void)
 		{
 			stopCGI = true;
 			if (kill(it->second.getCGI().pid, SIGKILL) < 0)
-				throw (Request::RequestException());
+				throw (Request::RequestException(0));
 			std::string InfiniteLoopHTML = INFINITE_LOOP_HTML;
 			ss << "HTTP/1.1 508 Loop Detected\r\n";
 			ss << "Content-type: text/html\r\n";
@@ -73,7 +73,7 @@ void Server::checkCGI(void)
 			char buffer[BUFFER_SIZE] = {0};
 			int fileSize = read(it->second.getCGI().fds[1][0], buffer, BUFFER_SIZE);
 			if (fileSize < 0)
-				throw (Request::RequestException());
+				throw (Request::RequestException(fileSize));
 			std::string responseCGI = buffer;
 			if (responseCGI.empty())
 			{
@@ -104,10 +104,10 @@ void Server::checkCGI(void)
 		if (stopCGI)
 		{
 			if (close(it->second.getCGI().fds[1][0]) == -1)
-				throw (Request::RequestException());
+				throw (Request::RequestException(0));
 			it->second.getCGI().inCGI = false;
 			if (send(it->second.getClientfd(), ss.str().c_str(), ss.str().size(), 0) < 0)
-				throw (Request::RequestException());
+				throw (Request::RequestException(0));
 			ss.str("");
 			ss.clear();
 		}
@@ -120,7 +120,7 @@ void Request::executeCGI(const std::string& fileName, char *executableCGI) {
 	_cgiEnv["URL"] = fileName;
 	if (pipe(_cgi.fds[0]) == -1
 		|| pipe(_cgi.fds[1]) == -1)
-		throw (Request::RequestException());
+		throw (Request::RequestException(0));
 	int pid = fork();
 	if (pid == 0)
 	{
@@ -130,7 +130,7 @@ void Request::executeCGI(const std::string& fileName, char *executableCGI) {
 			|| close(_cgi.fds[0][1]) == -1
 			|| close(_cgi.fds[1][0]) == -1
 			|| close(_cgi.fds[1][1]) == -1)
-			throw (Request::RequestException());
+			throw (Request::RequestException(0));
 
 		_cgiEnv["QUERY_STRING"] = _query;
 		char *args[4] = {executableCGI, (char *)(fileName.c_str()),
@@ -147,7 +147,7 @@ void Request::executeCGI(const std::string& fileName, char *executableCGI) {
 		if (close(_cgi.fds[0][0]) == -1
 			|| close(_cgi.fds[0][1]) == -1
 			|| close(_cgi.fds[1][1]) == -1)
-			throw (Request::RequestException());
+			throw (Request::RequestException(0));
 		if (pid > 0)
 		{
 			_cgi.inCGI = true;
@@ -158,7 +158,7 @@ void Request::executeCGI(const std::string& fileName, char *executableCGI) {
 		{
 			_cgi.inCGI = false;
 			if (close(_cgi.fds[1][0]) == -1)
-				throw (Request::RequestException());
+				throw (Request::RequestException(0));
 		}
 	}
 }

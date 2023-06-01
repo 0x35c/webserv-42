@@ -321,6 +321,11 @@ void Request::respondToRequest(void) {
 	}
 	else if (_method == "DELETE")
 		respondToDeleteRequest();
+	else {
+		_requestHeader[HEAD] = "includes/defaultPages/400";
+		_statusCode = "400 Bad Request";
+		sendErrorResponse();
+	}
 	_requestHeader.clear();
 	_boundary.clear();
 	_statusCode.clear();

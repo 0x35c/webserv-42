@@ -220,6 +220,12 @@ static void processBody(std::string& boundary, const std::string& line, strMap& 
 	}
 }
 
+/**
+* This function will parse the first buffer from the client,
+* containing the header and in some cases a body
+*
+* @param buffer The buffer to parse
+*/
 void Request::parseHeader(const std::string& buffer) {
 	size_t i = 0;
 	int lineToken;
@@ -247,6 +253,13 @@ void Request::parseHeader(const std::string& buffer) {
 	_requestHeader[BODY] = line;
 }
 
+/**
+* This function will parse a body sent by the client
+* using a chunked method
+*
+* @param buffer The buffer to add to the body content
+* @return True if the whole body has been received
+*/
 bool Request::parseChunkedBody(const std::string& buffer) {
 	if (!_chunkBufferFull)
 	{
@@ -271,6 +284,12 @@ bool Request::parseChunkedBody(const std::string& buffer) {
 	}
 }
 
+/**
+* This function will parse a body sent by the client
+*
+* @param buffer The buffer to add to the body content
+* @return True if the whole body has been received
+*/
 bool Request::parseBody(const std::string& buffer) {
 	if (_requestHeader[TRANSFER_ENCODING] == "chunked")
 		return (parseChunkedBody(buffer));
@@ -282,6 +301,20 @@ bool Request::parseBody(const std::string& buffer) {
 	return (false);
 }
 
+/**
+* This function will parse the query string contained
+* in some GET method headers
+*
+* It will split the string depending on the '?' character
+*
+* @param query A reference to the query value string attribute in Request
+* @param name A reference to the file name attribute in Request
+*
+* Exemple: 
+* getQuery(query, name);
+* with query == "/cgi-bin/hello.py?name=hi"
+* will be query == "name=hi" and name == "/cgi-bin/hello.py"
+*/
 static void getQuery(std::string& query, std::string& name) {
 	size_t delimiter = name.find("?");
 	if (delimiter != std::string::npos) {
@@ -290,6 +323,16 @@ static void getQuery(std::string& query, std::string& name) {
 	}
 }
 
+/**
+* This function will replace the %HEX_CODE by the corresponding
+* char (cf. ascii table) in the file name of the request
+*
+* @param name A reference to the file name attribute in Request
+*
+* Exemple: 
+* editName(name);
+* with name == "/uploads/My%20picture" will be name == "My picture"
+*/
 static void editName(std::string& name) {
 	std::string subName = name;
 	while (true) {
@@ -310,6 +353,10 @@ static void editName(std::string& name) {
 	}
 }
 
+/**
+* This function will respond to the request with the matching
+* function (GET, POST, DELETE or FORBIDDEN)
+*/
 void Request::respondToRequest(void) {
 	editName(_requestHeader[HEAD]);
 	getQuery(_query, _requestHeader[HEAD]);
@@ -321,7 +368,7 @@ void Request::respondToRequest(void) {
 	}
 	else if (_method == "DELETE")
 		respondToDeleteRequest();
-	else {
+	else if (_method == "FORBIDDEN") {
 		_requestHeader[HEAD] = "includes/defaultPages/400";
 		_statusCode = "400 Bad Request";
 		sendErrorResponse();

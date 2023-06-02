@@ -75,16 +75,7 @@ void Server::checkCGI(void)
 			if (fileSize < 0)
 				throw (Request::RequestException(fileSize));
 			std::string responseCGI = buffer;
-			if (responseCGI.empty())
-			{
-				std::ifstream errorFile("includes/defaultPages/502");
-				std::ostringstream errorStream;
-				statusCode = "502 Bad Gateway";
-				errorStream << "Content-Type: text/html\n\n";
-				errorStream << errorFile.rdbuf();
-				responseCGI = errorStream.str();
-			}
-			else if (responseCGI.find("\n\n") == std::string::npos || responseCGI.find("Content-Type: text/html") == std::string::npos)
+			if (responseCGI.empty() || responseCGI.find("\n\n") == std::string::npos || responseCGI.find("Content-Type: text/html") == std::string::npos)
 			{
 				std::ifstream errorFile("includes/defaultPages/502");
 				std::ostringstream errorStream;

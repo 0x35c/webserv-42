@@ -15,7 +15,7 @@ SRCS	:= main.cpp\
 		   parsing/parseLine.cpp\
 		   parsing/utils.cpp\
 
-CC 		:= g++
+CC 		:= c++
 CFLAGS  := -Wall -Wextra -Werror -std=c++98 -g -MMD
 OBJS    := $(addprefix objs/, $(SRCS:.cpp=.o))
 

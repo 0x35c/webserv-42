@@ -5,19 +5,22 @@
 #include <fcntl.h>
 
 Request::Request(void)
-	: _clientfd(-1), _method("")
+	: _clientfd(-1), _method(""), _contentTooLarge(false)
 { _cgi.inCGI = false; }
 
 Request::Request(int clientfd, const t_server& serverConfig)
-	: _clientfd(clientfd), _method(""), _serverConfig(serverConfig)
+	: _clientfd(clientfd), _method(""), _serverConfig(serverConfig), _contentTooLarge(false)
 { _cgi.inCGI = false; }
 
 Request::Request(const Request& other)
 	: _clientfd(other._clientfd), _method(other._method), _statusCode(other._statusCode),
-		_boundary(other._boundary), _query(other._query),
-		_requestHeader(other._requestHeader), _isDirectory(other._isDirectory),
-		_serverConfig(other._serverConfig)
-{ _cgi.inCGI = other._cgi.inCGI; }
+		_boundary(other._boundary), _query(other._query), _chunkBuffer(other._chunkBuffer),
+		_requestHeader(other._requestHeader), _cgiEnv(other._cgiEnv),
+		_serverConfig(other._serverConfig),
+		_location(other._location), _isDirectory(other._isDirectory),
+		_validRequest(other._validRequest), _contentTooLarge(other._contentTooLarge),
+		_chunkBufferFull(other._chunkBufferFull)
+{  }
 
 Request&	Request::operator=(const Request& other) {
 	if (this != &other) {
@@ -26,10 +29,16 @@ Request&	Request::operator=(const Request& other) {
 		_statusCode = other._statusCode;
 		_boundary = other._boundary;
 		_query = other._query;
+		_chunkBuffer = other._chunkBuffer;
 		_requestHeader = other._requestHeader;
-		_isDirectory = other._isDirectory;
+		_cgiEnv = other._cgiEnv;
+		_cgi = other._cgi;
 		_serverConfig = other._serverConfig;
-		_cgi.inCGI = other._cgi.inCGI;
+		_location = other._location;
+		_isDirectory = other._isDirectory;
+		_validRequest = other._validRequest;
+		_contentTooLarge = other._contentTooLarge;
+		_chunkBufferFull = other._chunkBufferFull;
 	}
 	return *this;
 }
@@ -144,8 +153,14 @@ bool Request::readRequest(std::string const &rawRequest) {
 		_method = getMethod(rawRequest);
 		if (_method != "FORBIDDEN")
 			parseHeader(rawRequest);
-		if ((_method == "POST" && _boundary.empty()) || _method == "FORBIDDEN") {
+		if (_method == "FORBIDDEN" ||
+			(_method == "POST" && _boundary.empty())) {
 			headerRead = false;
+			return (true);
+		}
+		else if (_method == "POST" && (static_cast<std::size_t>(std::atoll(_requestHeader[CONTENT_LENGTH].c_str())) > _serverConfig.maxFileSizeUpload)) {
+			headerRead = false;
+			_contentTooLarge = true;
 			return (true);
 		}
 		std::string tmpHeader = rawRequest.substr(0, rawRequest.find("\r\n\r\n"));

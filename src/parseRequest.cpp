@@ -363,7 +363,8 @@ void Request::respondToRequest(void) {
 	if (_method == "GET")
 		respondToGetRequest();
 	else if (_method == "POST") {
-		processBody(_boundary, _requestHeader[BODY], _requestHeader, _query);
+		if (_contentTooLarge == false)
+			processBody(_boundary, _requestHeader[BODY], _requestHeader, _query);
 		respondToPostRequest();
 	}
 	else if (_method == "DELETE")
@@ -373,6 +374,7 @@ void Request::respondToRequest(void) {
 		_statusCode = "400 Bad Request";
 		sendErrorResponse();
 	}
+	_contentTooLarge = false;
 	_requestHeader.clear();
 	_boundary.clear();
 	_statusCode.clear();

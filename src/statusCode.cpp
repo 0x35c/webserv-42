@@ -32,7 +32,7 @@ int Request::setStatusCode(void) {
 		_requestHeader[HEAD] = "includes/defaultPages/405";
 		return (400);
 	}
-	else if (_method == "POST" && std::atoll(_requestHeader[CONTENT_LENGTH].c_str()) > _serverConfig.maxFileSizeUpload) {
+	else if (_method == "POST" && static_cast<std::size_t>(std::atoll(_requestHeader[CONTENT_LENGTH].c_str())) > _serverConfig.maxFileSizeUpload) {
 		_statusCode = "413 Content Too Large";
 		_requestHeader[HEAD] = "includes/defaultPages/413";
 		return (400);

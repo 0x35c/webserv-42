@@ -112,13 +112,14 @@ class Request {
 		std::string _statusCode;
 		std::string _boundary;
 		std::string _query;
+		std::string _chunkBuffer;
 		strMap _requestHeader;
-		bool _isDirectory;
-		bool _validRequest;
 		std::map<std::string, std::string> _cgiEnv;
 		t_cgi _cgi;
 		t_server _serverConfig;
 		t_location *_location;
+		bool _isDirectory;
+		bool _validRequest;
+		bool _contentTooLarge;
 		bool _chunkBufferFull;
-		std::string _chunkBuffer;
 };

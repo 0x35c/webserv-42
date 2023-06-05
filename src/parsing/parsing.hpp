@@ -48,7 +48,7 @@ typedef struct s_server {
 	std::string 			server_name;
 	bool					isDefaultServer;
 	std::string 			errpage;
-	int						maxFileSizeUpload;
+	std::size_t				maxFileSizeUpload;
 	sockaddr_in				socketAddress;
 	std::vector<t_location>	locations;
 } t_server;
